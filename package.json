@@ -1,0 +1,19 @@
+{
+  "name": "xpro-howtomovetheneedle",
+  "private": false,
+  "version": "0.1.0",
+  "description": "Open-source X Pro list builder from bookmarks, likes, follows & replies — Jack Principles setup. Free & self-hostable.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply xpro-htmtn --local",
+    "db:migrate:remote": "wrangler d1 migrations apply xpro-htmtn --remote",
+    "ship": "bash scripts/ship.sh",
+    "secrets:x-oauth": "bash scripts/put-x-oauth-secrets.sh"
+  },
+  "devDependencies": {
+    "wrangler": "^4.94.0"
+  }
+}

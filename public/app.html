@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Build your Pro deck — X Pro Guideposts</title>
+  <meta name="description" content="Conversational setup → private Lists → pin as columns on pro.x.com" />
+  <meta name="theme-color" content="#0b1020" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231a4fdb'/%3E%3Ctext x='16' y='22' text-anchor='middle' fill='white' font-size='16' font-family='system-ui' font-weight='700'%3EX%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet" />
+</head>
+<body class="app-body">
+  <header class="site-header">
+    <a class="brand" href="/">
+      <span class="brand-mark" aria-hidden="true">X</span>
+      <span>Pro Guideposts</span>
+    </a>
+    <nav>
+      <span id="who" class="who"></span>
+      <button type="button" class="btn btn-small btn-ghost hidden" id="logout">Log out</button>
+    </nav>
+  </header>
+
+  <main class="app-main">
+    <p class="pool-banner" id="pool-banner" role="status">Checking free pool…</p>
+
+    <nav class="flow-progress" id="flow-progress" aria-label="Setup progress">
+      <ol class="flow-steps">
+        <li class="flow-step" data-step="0"><span>Start</span></li>
+        <li class="flow-step" data-step="1"><span>Goal</span></li>
+        <li class="flow-step" data-step="2"><span>Who</span></li>
+        <li class="flow-step" data-step="3"><span>Dials</span></li>
+        <li class="flow-step" data-step="4"><span>Plan</span></li>
+        <li class="flow-step" data-step="5"><span>Pro</span></li>
+      </ol>
+    </nav>
+
+    <!-- Jack conversation stage -->
+    <section class="stage card" id="stage">
+      <div class="host" id="host-line">One moment…</div>
+      <div id="panel"></div>
+    </section>
+
+    <section class="card wide hidden" id="proposal-panel">
+      <p class="card-kicker">Deck plan</p>
+      <h2>Your Pro deck plan</h2>
+      <p class="deck-name" id="deck-name"></p>
+      <p class="taste" id="taste"></p>
+      <p class="fine">These private Lists become the <strong>columns</strong> of a new deck in X Pro. Edit names if you want — create only when ready.</p>
+      <div id="lists"></div>
+      <div class="row">
+        <button type="button" class="btn btn-primary" id="create-lists">Create deck lists on X</button>
+        <button type="button" class="btn btn-ghost" id="restart">Start over</button>
+      </div>
+      <p class="fine" id="apply-status">Creates private Lists on your account. You’ll pin them into a new Pro deck next (X has no public deck API).</p>
+    </section>
+
+    <section class="card wide hidden" id="done-panel">
+      <p class="card-kicker">Almost there</p>
+      <h2>Put these lists in a new Pro deck</h2>
+      <p class="deck-name" id="done-deck-name"></p>
+      <p class="taste" id="done-blurb">
+        Your Lists are live (with people in them). Pro decks can’t be created by third-party apps —
+        open Pro and build a <strong>new deck that contains only these lists</strong> as columns.
+      </p>
+
+      <figure class="pro-walk" id="pro-walk" aria-label="Animated walkthrough: put your lists into a new Pro deck">
+        <div class="pro-walk-head">
+          <div>
+            <p class="pro-walk-kicker">60-second demo</p>
+            <figcaption class="pro-walk-caption" id="pro-walk-caption">Watch: how to add your lists as columns</figcaption>
+          </div>
+          <div class="pro-walk-controls">
+            <span class="pro-walk-counter" id="pro-walk-counter">1 / 8</span>
+            <button type="button" class="btn btn-small btn-ghost" id="pro-walk-replay" title="Replay">Replay</button>
+          </div>
+        </div>
+        <div class="pro-walk-progress" aria-hidden="true">
+          <div class="pro-walk-progress-bar" id="pro-walk-progress-bar"></div>
+        </div>
+        <ol class="pro-walk-dots" id="pro-walk-dots" aria-hidden="true"></ol>
+        <div class="pro-walk-frame" id="pro-walk-frame" aria-hidden="true">
+          <div class="pro-mock" id="pro-mock" data-phase="idle">
+            <div class="pro-mock-chrome">
+              <span class="pro-mock-dots" aria-hidden="true"></span>
+              <span class="pro-mock-url"><span class="pro-mock-lock" aria-hidden="true">🔒</span> pro.x.com</span>
+              <span class="pro-mock-badge">X Pro</span>
+            </div>
+            <div class="pro-mock-body">
+              <aside class="pro-mock-rail">
+                <p class="pro-mock-rail-label">Decks</p>
+                <div class="pro-mock-decks">
+                  <span class="pro-mock-deck-item is-home">Home</span>
+                  <span class="pro-mock-deck-item is-new" id="pro-mock-new-deck">
+                    <span class="pro-mock-plus">+</span> New deck
+                  </span>
+                  <span class="pro-mock-deck-item is-active" id="pro-mock-active-deck">
+                    <span class="pro-mock-deck-dot"></span>
+                    <span id="pro-mock-deck-label">Your deck</span>
+                  </span>
+                </div>
+                <button type="button" class="pro-mock-add" id="pro-mock-add" tabindex="-1">
+                  <span class="pro-mock-plus">+</span> Add column
+                </button>
+              </aside>
+              <div class="pro-mock-main">
+                <header class="pro-mock-deckbar">
+                  <span class="pro-mock-deckbar-title" id="pro-mock-deckbar-title">—</span>
+                  <span class="pro-mock-deckbar-sub" id="pro-mock-deckbar-sub">No columns yet</span>
+                </header>
+                <div class="pro-mock-empty" id="pro-mock-empty">
+                  <span class="pro-mock-empty-icon" aria-hidden="true">▦</span>
+                  <span>Empty deck</span>
+                  <span class="pro-mock-empty-hint">Add each XP · list as a column</span>
+                </div>
+                <div class="pro-mock-cols" id="pro-mock-cols"></div>
+                <div class="pro-mock-picker" id="pro-mock-picker">
+                  <p class="pro-mock-picker-title">Add a column</p>
+                  <div class="pro-mock-picker-opt" data-opt="home">🏠 Home</div>
+                  <div class="pro-mock-picker-opt is-lists" id="pro-mock-opt-lists" data-opt="lists">📋 Lists</div>
+                  <div class="pro-mock-picker-opt" data-opt="search">🔎 Search</div>
+                  <div class="pro-mock-list-menu" id="pro-mock-list-menu"></div>
+                </div>
+                <div class="pro-mock-typebox" id="pro-mock-typebox">
+                  <span class="pro-mock-typebox-label">Deck name</span>
+                  <span class="pro-mock-typebox-value" id="pro-mock-type-value"></span>
+                  <span class="pro-mock-caret" id="pro-mock-caret"></span>
+                </div>
+              </div>
+              <div class="pro-cursor" id="pro-cursor">
+                <span class="pro-cursor-ripple"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="pro-walk-hint">Hover to pause · uses your real list names · loops until you open Pro</p>
+      </figure>
+
+      <ol class="pro-steps" id="pro-steps">
+        <li data-walk="0">Open <a href="https://pro.x.com" target="_blank" rel="noopener">pro.x.com</a></li>
+        <li data-walk="1">Create a <strong>new empty deck</strong></li>
+        <li data-walk="2">Name it: <strong id="deck-name-step">XP · …</strong></li>
+        <li data-walk="3">For each list: <strong>Add column → Lists → pick it</strong></li>
+        <li data-walk="4">When every list is a column, that deck is your board</li>
+      </ol>
+      <h3 class="columns-heading">Lists that go in this deck</h3>
+      <ul id="created"></ul>
+      <div class="row">
+        <a class="btn btn-primary" id="open-pro" href="https://pro.x.com" target="_blank" rel="noopener">Open X Pro</a>
+        <button type="button" class="btn btn-ghost" id="copy-deck-recipe">Copy deck checklist</button>
+        <a class="btn btn-ghost" href="https://x.com/i/lists" target="_blank" rel="noopener">View all Lists</a>
+        <button type="button" class="btn btn-ghost" id="restart-done">Build another</button>
+      </div>
+      <p class="fine" id="copy-status"></p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>
+      <strong>Not affiliated with X or X Corp.</strong>
+      Built by
+      <a href="https://x.com/JonathanDrake" target="_blank" rel="noopener">@JonathanDrake</a>
+      · optional shortcut — not required for Pro ·
+      <a href="https://pro.x.com" target="_blank" rel="noopener">pro.x.com</a>
+      · lists only after you approve ·
+      <a href="https://howtomovetheneedle.com">HTMTN</a>
+    </p>
+  </footer>
+  <script src="/app.js"></script>
+</body>
+</html>

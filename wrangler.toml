@@ -1,0 +1,45 @@
+# X Pro Guideposts — Cloudflare Worker + static assets + D1
+# Live: https://xpro.howtomovetheneedle.com
+name = "xpro-howtomovetheneedle"
+main = "worker.js"
+compatibility_date = "2026-05-01"
+workers_dev = true
+
+[[routes]]
+pattern = "xpro.howtomovetheneedle.com/*"
+zone_name = "howtomovetheneedle.com"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+not_found_handling = "404-page"
+run_worker_first = ["/api/*"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "xpro-htmtn"
+database_id = "2d2e4872-4668-48f0-8f76-7157e6a4ea3f"
+migrations_dir = "migrations"
+
+[vars]
+PUBLIC_ORIGIN = "https://xpro.howtomovetheneedle.com"
+FREE_RUNS_PER_DAY = "10"
+FREE_PER_USER_PER_DAY = "1"
+MAX_BOOKMARKS = "100"
+MAX_LIKES = "50"
+MAX_FOLLOWS = "25"
+MAX_LISTS = "3"
+MAX_MEMBERS_PER_LIST = "15"
+PUBLIC_DEMO = "true"
+# Short-lived host sessions — minimize how long we hold X tokens
+SESSION_TTL_MINUTES = "60"
+# Wipe session + X tokens after successful list create
+DISCONNECT_AFTER_APPLY = "true"
+
+# Secrets (wrangler secret put …):
+#   X_CLIENT_ID
+#   X_CLIENT_SECRET
+#   SESSION_SECRET
+#   TOKEN_ENCRYPTION_KEY   (32+ chars)
+#   DAILY_POOL_SECRET
+#   XAI_API_KEY            (optional host Grok for free pool)

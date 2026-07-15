@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>X Pro Guideposts — Optional starter for pro.x.com</title>
+  <meta name="description" content="Optional helper for pro.x.com. Everything can be done manually in X — this free tool just speeds up first lists and decks from your own signals." />
+  <meta property="og:title" content="X Pro Guideposts" />
+  <meta property="og:description" content="Not required. A free starter to get going on pro.x.com — lists and decks can be built manually anytime." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://xpro.howtomovetheneedle.com" />
+  <meta name="theme-color" content="#0b1020" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231a4fdb'/%3E%3Ctext x='16' y='22' text-anchor='middle' fill='white' font-size='16' font-family='system-ui' font-weight='700'%3EX%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/">
+      <span class="brand-mark" aria-hidden="true">X</span>
+      <span>Pro Guideposts</span>
+    </a>
+    <nav>
+      <a href="https://github.com/drake/X-Pro-Setup" target="_blank" rel="noopener">GitHub</a>
+      <a href="/app.html" class="btn btn-small btn-ghost">Open app</a>
+      <a href="/api/auth/x/start" class="btn btn-small btn-primary">Connect X</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p class="eyebrow">Free · Optional · MIT · How To Move The Needle</p>
+      <h1>A starter for pro.x.com — not a requirement.</h1>
+      <p class="lede">
+        <strong>This app is not needed.</strong> Lists, members, and decks can all be built
+        by hand inside X and
+        <a href="https://pro.x.com" target="_blank" rel="noopener">pro.x.com</a>.
+        Guideposts is a free shortcut: turn your own bookmarks, likes, follows, and replies
+        into private <strong>XP ·</strong> Lists so getting started on Pro is less blank-page.
+        Nothing is created until you approve.
+      </p>
+      <p class="disclaimer" role="note">
+        <strong>Not affiliated with X, X Corp, or pro.x.com.</strong>
+        Independent open-source project · built by
+        <a href="https://x.com/JonathanDrake" target="_blank" rel="noopener">@JonathanDrake</a>
+      </p>
+      <div class="hero-cta">
+        <a class="btn btn-primary btn-lg" href="/api/auth/x/start">Try the shortcut</a>
+        <a class="btn btn-ghost btn-lg" href="https://pro.x.com" target="_blank" rel="noopener">Open pro.x.com instead</a>
+        <a class="btn btn-ghost btn-lg" href="/app.html">Continue in app</a>
+      </div>
+      <div class="pool-pill" id="pool-line" role="status">Loading free pool…</div>
+    </section>
+
+    <section class="card wide optional-callout" aria-label="Not required">
+      <p class="card-kicker">Straight talk</p>
+      <h2>Optional on purpose</h2>
+      <p>
+        Pro does not depend on this tool. Create lists under
+        <a href="https://x.com/i/lists" target="_blank" rel="noopener">x.com/i/lists</a>,
+        add people yourself, open <a href="https://pro.x.com" target="_blank" rel="noopener">pro.x.com</a>,
+        make a deck, and pin list columns — all without Guideposts.
+      </p>
+      <p>
+        This host only exists to help people <strong>get started</strong>: a first deck plan from
+        signals already on your account, then a short path into Pro. Use it once, use it never,
+        or self-host the MIT code — your call.
+      </p>
+    </section>
+
+    <section class="signal-strip" aria-label="Signals used">
+      <div class="signal-chip"><span class="signal-dot"></span> Bookmarks</div>
+      <div class="signal-chip"><span class="signal-dot"></span> Last 50 likes</div>
+      <div class="signal-chip"><span class="signal-dot"></span> Last 25 follows</div>
+      <div class="signal-chip"><span class="signal-dot"></span> Reply graph</div>
+    </section>
+
+    <section class="card wide how-card">
+      <h2>How it works</h2>
+      <ol class="steps steps-rich">
+        <li><strong>Connect X</strong> — OAuth 2.0. Read + list write only. Nothing is posted as you.</li>
+        <li><strong>Answer two beats</strong> — what Pro should help you do, and who you never want to miss.</li>
+        <li><strong>Tune dials</strong> — weight bookmarks, likes, follows, replies (0–100).</li>
+        <li><strong>Approve lists</strong> — edit names, then create private Lists on your account.</li>
+        <li><strong>New Pro deck</strong> — open pro.x.com, create a deck, Add column → Lists for each XP · list.</li>
+      </ol>
+    </section>
+
+    <section class="card wide muted">
+      <h2>Honest costs</h2>
+      <p>
+        The software is free (MIT). X API credits are not. This public host covers
+        <strong>10 full builds per UTC day</strong> after a random unlock
+        (<strong>1 free build per person per day</strong>).
+        Self-host with your own X developer app for more.
+        Optional naming polish uses an xAI API key — X Premium chat Grok is not an API.
+      </p>
+    </section>
+
+    <section class="card wide muted">
+      <h2>Short connections (on purpose)</h2>
+      <p>
+        This host is <strong>not</strong> a permanent login. Sessions last about
+        <strong>60 minutes</strong>, long-lived refresh tokens are <strong>not</strong> stored,
+        and after lists are created the session ends and X tokens are <strong>wiped from the host</strong>.
+        Lists already on your X account stay yours — finish the Pro deck without staying connected here.
+      </p>
+    </section>
+
+    <section class="cta-band">
+      <h2>Skip the blank page — or skip this app</h2>
+      <p class="lede">
+        One free host-paid shortcut build per day after unlock · or go straight to
+        <a href="https://pro.x.com" target="_blank" rel="noopener">pro.x.com</a> and do it manually.
+      </p>
+      <div class="hero-cta" style="justify-content:center">
+        <a class="btn btn-primary btn-lg" href="/api/auth/x/start">Try the shortcut</a>
+        <a class="btn btn-ghost btn-lg" href="https://pro.x.com" target="_blank" rel="noopener">Open Pro</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>
+      <strong>Not affiliated with X or X Corp.</strong>
+      Built by
+      <a href="https://x.com/JonathanDrake" target="_blank" rel="noopener">@JonathanDrake</a>
+      · optional starter for
+      <a href="https://pro.x.com" target="_blank" rel="noopener">pro.x.com</a>
+      ·
+      <a href="https://howtomovetheneedle.com">How To Move The Needle</a>
+      ·
+      <a href="https://github.com/drake/X-Pro-Setup" target="_blank" rel="noopener">MIT source</a>
+    </p>
+  </footer>
+  <script>
+    fetch("/api/pool")
+      .then((r) => r.json())
+      .then((p) => {
+        const el = document.getElementById("pool-line");
+        el.classList.remove("is-locked", "is-open", "is-empty");
+        if (!p.unlocked) {
+          const h = Math.floor(p.seconds_until_unlock / 3600);
+          const m = Math.floor((p.seconds_until_unlock % 3600) / 60);
+          el.textContent = `Free pool unlocks in ~${h}h ${m}m · then ${p.max} host-paid builds`;
+          el.classList.add("is-locked");
+        } else if (p.remaining <= 0) {
+          el.textContent = `Free pool used up for today (${p.max}) · self-host or come back tomorrow`;
+          el.classList.add("is-empty");
+        } else {
+          el.textContent = `Free pool open · ${p.remaining} of ${p.max} host-paid builds left today`;
+          el.classList.add("is-open");
+        }
+      })
+      .catch(() => {
+        const el = document.getElementById("pool-line");
+        el.textContent = "Connect X to start · free pool status loads on the live host";
+      });
+  </script>
+</body>
+</html>

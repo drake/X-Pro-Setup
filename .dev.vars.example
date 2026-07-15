@@ -1,0 +1,9 @@
+# Local secrets for wrangler dev (never commit)
+# Copy to .dev.vars and fill in.
+
+X_CLIENT_ID=
+X_CLIENT_SECRET=
+SESSION_SECRET=dev-session-change-me
+TOKEN_ENCRYPTION_KEY=dev-token-key-change-me-32b
+DAILY_POOL_SECRET=dev-pool-secret
+# XAI_API_KEY=
