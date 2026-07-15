@@ -1032,6 +1032,8 @@ async function applyLists() {
     show("stage", false);
     show("done-panel", true);
     setFlowStep(3);
+    // Keep TY at the top (walkthrough gif first) — don't leave user at page bottom
+    scrollThankYouTop();
     const okLists = (data.result?.lists || []).filter((L) => L.x_list_id || L.url);
     const n = okLists.length;
     const deck =
@@ -1088,6 +1090,8 @@ async function applyLists() {
     }
 
     startProWalkthrough(deck, okLists);
+    // After DOM updates / walkthrough inject, pin scroll to top again
+    scrollThankYouTop();
 
     // Host clears X tokens after create; keep TY UI so user can open Pro
     if (data.disconnected || state.disconnectAfterApply !== false) {
@@ -1115,6 +1119,26 @@ async function applyLists() {
     $("apply-status").textContent = e.message;
     $("create-lists").disabled = false;
   }
+}
+
+/** Scroll TY page so the walkthrough gif is in view (not the footer). */
+function scrollThankYouTop() {
+  const go = () => {
+    const panel = $("done-panel");
+    const walk = $("pro-walk");
+    const target = walk || panel;
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+  };
+  // Immediate + after paint (list DOM can push layout down)
+  go();
+  requestAnimationFrame(() => {
+    go();
+    setTimeout(go, 50);
+    setTimeout(go, 200);
+  });
 }
 
 function escapeHtml(s) {
