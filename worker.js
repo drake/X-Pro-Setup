@@ -688,7 +688,7 @@ async function applyRun(request, env, id) {
     const deckName =
       proposalDeck.name ||
       proposal.taste?.deck_name ||
-      buildDeckName(quiz, quiz.q2, quiz.q1, quiz.chip);
+      buildDeckName(quiz);
 
     const result = {
       lists: created,
@@ -1148,20 +1148,13 @@ function analyzeSignals(signals, quiz = {}, weightsIn = {}) {
     .slice(0, 8)
     .map(([t]) => t);
 
-  const who = (quiz.q2 || quiz.chip || "people you care about").trim();
-  const job = (quiz.q1 || quiz.chip || "your Pro feed").trim();
-  const chip = String(quiz.chip || "").trim();
-
-  // Human labels (branded at the end so X Pro is always visible)
-  const coreLabel =
-    shortLabel(who, 20) || shortLabel(chip, 20) || shortLabel(job, 20) || "Core circle";
+  // Signal-based starter lists (no quiz) — clear Pro column names
+  const coreLabel = "Bookmarks";
   const talkLabel = "Conversations";
   const followLabel = (() => {
     const tag = topTags[0] || "";
-    // Prefer real themes over 2–3 letter noise tags
-    if (tag.length >= 4 && tag.length <= 12) return `#${tag} orbit`;
-    if (chip) return shortLabel(chip, 16) || "Fresh follows";
-    return "Fresh follows";
+    if (tag.length >= 4 && tag.length <= 12) return `#${tag} follows`;
+    return "Recent follows";
   })();
 
   const lists = [];
@@ -1170,7 +1163,7 @@ function analyzeSignals(signals, quiz = {}, weightsIn = {}) {
       key: "core",
       name: brandListName(coreLabel),
       description: brandListDesc(
-        `Saves & strong signals · ${shortLabel(job, 50) || "your feed"}`
+        "Starter column · accounts from saves & strong signals"
       ),
       private: true,
       members: core.map(memberRow),
@@ -1181,7 +1174,7 @@ function analyzeSignals(signals, quiz = {}, weightsIn = {}) {
       key: "replies",
       name: brandListName(talkLabel),
       description: brandListDesc(
-        `People you reply to most · ${shortLabel(who, 40) || "real conversations"}`
+        "Starter column · accounts you reply to most"
       ),
       private: true,
       members: talk.map(memberRow),
@@ -1192,7 +1185,7 @@ function analyzeSignals(signals, quiz = {}, weightsIn = {}) {
       key: "follows",
       name: brandListName(followLabel),
       description: brandListDesc(
-        `Recent follows · ${shortLabel(job, 45) || "who you added"}`
+        "Starter column · recent follows"
       ),
       private: true,
       members: fresh.map(memberRow),
@@ -1213,7 +1206,7 @@ function analyzeSignals(signals, quiz = {}, weightsIn = {}) {
     if (!lists[i].members?.length) lists.splice(i, 1);
   }
 
-  const deckName = buildDeckName(quiz, who, job, chip);
+  const deckName = buildDeckName(quiz);
   const deck = {
     name: deckName,
     // X Pro has no public API to create decks/columns — Lists *are* the columns.
@@ -1245,7 +1238,7 @@ function analyzeSignals(signals, quiz = {}, weightsIn = {}) {
   }
 
   const taste = {
-    summary: buildSummary(job, who, topAuthors, topTags),
+    summary: buildSummary(topAuthors, topTags, weights),
     top_authors: topAuthors,
     top_topics: topTags,
     quiz,
@@ -1257,13 +1250,9 @@ function analyzeSignals(signals, quiz = {}, weightsIn = {}) {
 }
 
 /** Human name for the Pro deck the user will create (not creatable via API). */
-function buildDeckName(quiz = {}, who = "", job = "", chip = "") {
-  const label =
-    shortLabel(chip, 16) ||
-    shortLabel(who, 16) ||
-    shortLabel(job, 16) ||
-    "Guideposts";
-  return `XP · ${label}`.slice(0, 40);
+function buildDeckName(quiz = {}) {
+  const chip = shortLabel(quiz.chip || quiz.q2 || quiz.q1 || "", 16);
+  return `XP · ${chip || "Pro starter"}`.slice(0, 40);
 }
 
 function memberRow(e) {
@@ -1282,15 +1271,21 @@ function memberRow(e) {
   };
 }
 
-function buildSummary(job, who, topAuthors, topTags) {
+function buildSummary(topAuthors, topTags, weights = {}) {
   const names = topAuthors
     .slice(0, 3)
     .map((a) => "@" + a.username)
     .join(", ");
   const topics = topTags.slice(0, 3).join(", ");
-  let s = `You’re optimizing for “${job}” and people like “${who}”.`;
+  const parts = [];
+  if (weights.bookmark > 0) parts.push("bookmarks");
+  if (weights.like > 0) parts.push("likes");
+  if (weights.follow > 0) parts.push("follows");
+  if (weights.reply > 0) parts.push("replies");
+  let s = `Starter lists ranked from ${parts.join(", ") || "your X signals"}.`;
   if (names) s += ` Strong signals around ${names}.`;
   if (topics) s += ` Topics: ${topics}.`;
+  s += " Pin each list as a column in a new pro.x.com deck.";
   return s;
 }
 

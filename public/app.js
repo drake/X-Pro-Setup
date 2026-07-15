@@ -1,15 +1,13 @@
 /**
- * Jack Principles flow — one task at a time, shared control, awareness of past answers.
+ * Short starter flow: connect → signal dials → propose lists → create → open Pro.
+ * Not a Pro replacement — just a way to get first list columns on the board.
  */
 const state = {
   user: null,
   pool: null,
-  chip: "",
-  q1: "",
-  q2: "",
   // 0–100 UI scale; mapped to analyzer weights server-side
   weights: {
-    bookmark: 75, // default ~ high intent
+    bookmark: 75,
     like: 40,
     follow: 50,
     reply: 90,
@@ -19,15 +17,6 @@ const state = {
 };
 
 const $ = (id) => document.getElementById(id);
-
-const CHIPS = [
-  "Find customers",
-  "Learn my craft",
-  "Spot trends",
-  "Keep up with friends",
-  "Research competitors",
-  "Stay inspired",
-];
 
 async function api(path, opts = {}) {
   const res = await fetch(path, {
@@ -88,19 +77,19 @@ function restartFlow() {
   show("proposal-panel", false);
   show("done-panel", false);
   show("stage", true);
-  state.q1 = state.q2 = state.chip = "";
   state.run = state.proposal = null;
   state.weights = { bookmark: 75, like: 40, follow: 50, reply: 90 };
   if (!state.user) {
     setFlowStep(0);
-    setHost("Connect with X again for another build — sessions stay short on purpose.");
+    setHost("Connect with X again for another starter build — sessions stay short on purpose.");
     panel(
       `<a class="btn btn-primary" href="/api/auth/x/start">Connect with X</a>
+       <a class="btn btn-ghost" href="https://pro.x.com" target="_blank" rel="noopener">Open pro.x.com</a>
        <p class="hint">About ${state.sessionTtlMin || 60} minutes max · tokens wiped after create or disconnect.</p>`
     );
     return;
   }
-  beat0();
+  startDials();
 }
 
 async function boot() {
@@ -134,9 +123,9 @@ async function boot() {
       logout.textContent = "Disconnect";
     }
     startSessionTicker();
-    beat0();
+    startDials();
   } catch (e) {
-    setHost("I couldn’t reach the server. If you’re local, run wrangler dev.");
+    setHost("Couldn’t reach the server. If you’re local, run wrangler dev.");
     panel(
       `<p class="hint">${escapeHtml(e.message)}</p>
        <a class="btn btn-ghost" href="/">Back home</a>`
@@ -264,142 +253,22 @@ async function hardDisconnect() {
   renderSessionBanner();
 }
 
-/** Beat 0 — awareness of past action (connected) */
-function beat0() {
+/** Connected: go straight to signal dials (no quiz). */
+function startDials() {
   show("proposal-panel", false);
   show("done-panel", false);
   show("stage", true);
-  setFlowStep(0);
+  setFlowStep(1);
   const ttl = state.sessionTtlMin || 60;
   setHost(
-    `You’re in, @${state.user.username}. This is a shortcut to private Lists for pro.x.com — not something Pro needs. Two quick things first so the plan fits you.`
-  );
-  panel(
-    `<button type="button" class="btn btn-primary" id="go-q1">Sounds good</button>
-     <p class="hint">Optional · about 3 minutes · session ~${ttl} min · disconnects after create. Lists and decks can always be built manually in X.</p>`
-  );
-  $("go-q1").onclick = q1;
-}
-
-function q1() {
-  setFlowStep(1);
-  setHost("When you open X Pro, what do you most want this feed to help you do?");
-  panel(`
-    <div class="chips" id="chips"></div>
-    <input class="field" id="q1" placeholder="In your own words…" autocomplete="off" />
-    <p class="hint">Chips are shortcuts — free text is better if you have it.</p>
-    <button type="button" class="btn btn-primary" id="next1">Continue</button>
-  `);
-  const box = $("chips");
-  CHIPS.forEach((label) => {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "chip";
-    b.textContent = label;
-    b.onclick = () => {
-      [...box.querySelectorAll(".chip")].forEach((c) => c.classList.remove("active"));
-      b.classList.add("active");
-      state.chip = label;
-      $("q1").value = label;
-      $("q1").focus();
-    };
-    box.appendChild(b);
-  });
-  $("next1").onclick = () => {
-    const v = $("q1").value.trim();
-    if (!v) {
-      setHost("Give me anything — even three words. What should this feed help you do?");
-      return;
-    }
-    state.q1 = v;
-    if (!state.chip) state.chip = v.slice(0, 40);
-    ackQ1ThenQ2();
-  };
-  bindEnter("q1", "next1");
-  $("q1").focus();
-}
-
-function ackQ1ThenQ2() {
-  const v = state.q1.toLowerCase();
-  let ack = `Got it — “${state.q1}.”`;
-  if (/customer|sale|lead|buyer|client/.test(v)) {
-    ack = "Sales radar. Got it — I’ll bias toward people you engage, not just famous accounts.";
-  } else if (/learn|craft|skill|how/.test(v)) {
-    ack = "Skill stack. I’ll lean on who you save and like when you’re learning.";
-  } else if (/trend|news|pulse/.test(v)) {
-    ack = "Pulse check. I’ll overweight fresh follows and active voices.";
-  } else if (/friend|keep up|social/.test(v)) {
-    ack = "People first. Replies and real conversations get extra weight.";
-  } else if (/compet/.test(v)) {
-    ack = "Competitive lens. I’ll still prefer accounts you actually interact with.";
-  } else if (/inspir/.test(v)) {
-    ack = "Inspiration lane. Bookmarks and likes will lead.";
-  }
-
-  setHost(ack);
-  panel(`<p class="waiting">I’m listening for the next beat…</p>`);
-  setTimeout(q2, 900);
-}
-
-function q2() {
-  setFlowStep(2);
-  const v = state.q1.toLowerCase();
-  let prompt =
-    "Who are the people you never want to miss — in your own words?";
-  if (/customer|sale|lead|buyer|client/.test(v)) {
-    prompt =
-      "Who are the people you never want to miss — owners, buyers, partners… however you’d say it.";
-  } else if (/learn|craft|skill/.test(v)) {
-    prompt =
-      "Who should always make the cut — teachers, builders, operators — in your words?";
-  } else if (/inspir/.test(v)) {
-    prompt =
-      "Who lights you up — builders, storytellers, operators — however you’d name them.";
-  }
-  setHost(prompt);
-  panel(`
-    <input class="field" id="q2" placeholder="e.g. lawn care owners in Colorado" autocomplete="off" />
-    <p class="hint">Examples: AI agent builders · honest marketing operators · local service pros</p>
-    <button type="button" class="btn btn-primary" id="to-weights">Continue</button>
-  `);
-  $("to-weights").onclick = () => {
-    const v2 = $("q2").value.trim();
-    if (!v2) {
-      setHost("One line is enough — who should never get lost in the feed?");
-      return;
-    }
-    state.q2 = v2;
-    setHost(`“${state.q2}.” Locked in. One more thing — how much should each signal count?`);
-    panel(`<p class="waiting">Pulling the dials…</p>`);
-    setTimeout(weightsBeat, 700);
-  };
-  bindEnter("q2", "to-weights");
-  $("q2").focus();
-}
-
-/** Beat: customize signal weights (sliders) — still one focused task */
-function weightsBeat() {
-  setFlowStep(3);
-  const v = state.q1.toLowerCase();
-  if (/customer|sale|lead|buyer|client|compet/.test(v)) {
-    state.weights = { bookmark: 55, like: 35, follow: 70, reply: 95 };
-  } else if (/learn|craft|skill|inspir/.test(v)) {
-    state.weights = { bookmark: 90, like: 70, follow: 45, reply: 50 };
-  } else if (/friend|keep up|social/.test(v)) {
-    state.weights = { bookmark: 50, like: 45, follow: 60, reply: 100 };
-  } else if (/trend|news|pulse/.test(v)) {
-    state.weights = { bookmark: 60, like: 55, follow: 85, reply: 40 };
-  }
-
-  setHost(
-    "Drag these to taste. Higher = that behavior matters more when I pick people for your lists."
+    `@${state.user.username} — set how much each signal should count. Then scan builds starter lists you can pin in pro.x.com. This does not replace Pro; it only gets columns on the board faster.`
   );
   panel(`
     <div class="sliders" id="sliders">
-      ${sliderRow("bookmark", "Bookmarks", "Saves you meant to come back to", state.weights.bookmark)}
-      ${sliderRow("like", "Likes", "What resonated (broader, noisier)", state.weights.like)}
-      ${sliderRow("follow", "Recent follows", "Who you added to the feed", state.weights.follow)}
-      ${sliderRow("reply", "Replies", "Who you actually talk to", state.weights.reply)}
+      ${sliderRow("bookmark", "Bookmarks", "Accounts from posts you saved (strong intent)", state.weights.bookmark)}
+      ${sliderRow("like", "Likes", "Accounts from posts you liked recently (broader)", state.weights.like)}
+      ${sliderRow("follow", "Recent follows", "People you just added to your feed", state.weights.follow)}
+      ${sliderRow("reply", "Replies", "People you actually talk to in replies", state.weights.reply)}
     </div>
     <div class="row presets">
       <button type="button" class="chip" data-preset="balanced">Balanced</button>
@@ -407,8 +276,10 @@ function weightsBeat() {
       <button type="button" class="chip" data-preset="social">Conversations first</button>
       <button type="button" class="chip" data-preset="discovery">Follows first</button>
     </div>
-    <p class="hint">Presets are starting points — every slider still counts. Zero a dial to ignore that signal.</p>
-    <button type="button" class="btn btn-primary" id="scan">Build my lists</button>
+    <p class="hint">Higher = more weight when ranking people. Zero a dial to ignore that signal. Session ~${ttl} min.</p>
+    <button type="button" class="btn btn-primary" id="scan">Scan & propose lists</button>
+    <p class="hint" style="margin-top:0.85rem">Or skip this app and build lists manually in
+      <a href="https://pro.x.com" target="_blank" rel="noopener">pro.x.com</a>.</p>
   `);
 
   bindSliders();
@@ -496,17 +367,24 @@ function stopScanAnim() {
 }
 
 async function startScan() {
-  if (!state.q2) {
-    setHost("I still need who you never want to miss.");
-    return;
-  }
   ["bookmark", "like", "follow", "reply"].forEach((key) => {
     const input = $("w-" + key);
     if (input) state.weights[key] = Number(input.value);
   });
 
+  const allZero =
+    state.weights.bookmark +
+      state.weights.like +
+      state.weights.follow +
+      state.weights.reply ===
+    0;
+  if (allZero) {
+    setHost("Turn at least one dial above zero so there’s a signal to rank people by.");
+    return;
+  }
+
   setHost(
-    `Perfect. I’ll look for “${state.q2}” with your dials — bookmarks ${state.weights.bookmark}, likes ${state.weights.like}, follows ${state.weights.follow}, replies ${state.weights.reply}.`
+    `Scanning with dials — bookmarks ${state.weights.bookmark}, likes ${state.weights.like}, follows ${state.weights.follow}, replies ${state.weights.reply}. Nothing is created until you approve.`
   );
   renderScanPanel();
   const scanBtn = $("scan");
@@ -516,16 +394,13 @@ async function startScan() {
     const data = await api("/api/runs", {
       method: "POST",
       body: JSON.stringify({
-        q1: state.q1,
-        q2: state.q2,
-        chip: state.chip,
         weights: state.weights,
       }),
     });
     stopScanAnim();
     state.run = data.run;
     if (data.run.status === "failed") {
-      setHost("I hit a snag talking to X.");
+      setHost("Hit a snag talking to X.");
       panel(`<p class="hint">${escapeHtml(data.run.error || "Unknown error")}</p>
         <button class="btn btn-primary" id="retry">Try again</button>`);
       $("retry").onclick = startScan;
@@ -533,13 +408,13 @@ async function startScan() {
     }
     const lists = data.run.proposal?.lists || [];
     if (!lists.length) {
-      setHost("I scanned your signals but couldn’t assemble lists with those dials.");
-      panel(`<p class="hint">Try raising bookmarks or replies, or broaden who you never want to miss.</p>
-        <button class="btn btn-primary" id="retry-empty">Adjust dials</button>`);
-      $("retry-empty").onclick = weightsBeat;
+      setHost("Scan finished, but no lists could be built with those dials.");
+      panel(`<p class="hint">Raise bookmarks or replies, or try a preset. You can always build lists by hand in Pro.</p>
+        <button class="btn btn-primary" id="retry-empty">Adjust dials</button>
+        <a class="btn btn-ghost" href="https://pro.x.com" target="_blank" rel="noopener">Open pro.x.com</a>`);
+      $("retry-empty").onclick = startDials;
       return;
     }
-    // Refresh pool after claiming free slot
     try {
       const me = await api("/api/me");
       renderPool(me.pool, me.free_remaining_for_user);
@@ -557,12 +432,12 @@ async function startScan() {
         e.data?.message ||
           "The free pool isn’t available right now. It unlocks at a random time each day."
       );
-      panel(`<p class="hint">Self-host for unlimited builds, or check back after unlock.</p>
+      panel(`<p class="hint">Self-host for unlimited builds, or check back after unlock. Or use Pro manually.</p>
         <a class="btn btn-ghost" href="https://github.com/drake/X-Pro-Setup" target="_blank" rel="noopener">Self-host on GitHub</a>
-        <a class="btn btn-ghost" href="/">Home</a>`);
+        <a class="btn btn-ghost" href="https://pro.x.com" target="_blank" rel="noopener">Open pro.x.com</a>`);
       return;
     }
-    setHost("Something broke mid-conversation — that’s on me.");
+    setHost("Something broke mid-scan.");
     panel(`<p class="hint">${escapeHtml(e.message)}</p>
       <button class="btn btn-primary" id="retry2">Try again</button>`);
     $("retry2").onclick = startScan;
@@ -581,9 +456,9 @@ function deckTitle(runOrProposal) {
 
 function renderProposal(run) {
   const deck = deckTitle(run);
-  setFlowStep(4);
+  setFlowStep(2);
   setHost(
-    `Here’s your Pro deck plan — “${deck}”. Each block is a column. Tweak names if you want; nothing hits X until you create.`
+    `Starter lists for deck “${deck}”. Each block can be a Pro column. Tweak names if you want — nothing hits X until you create.`
   );
   panel("");
   show("stage", false);
@@ -1058,7 +933,7 @@ async function applyLists() {
     show("proposal-panel", false);
     show("stage", false);
     show("done-panel", true);
-    setFlowStep(5);
+    setFlowStep(3);
     const okLists = (data.result?.lists || []).filter((L) => L.x_list_id || L.url);
     const n = okLists.length;
     const deck =
