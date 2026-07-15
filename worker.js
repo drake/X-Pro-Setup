@@ -94,7 +94,7 @@ async function handleApi(request, env, url, ctx) {
       pool,
       free_remaining_for_user: Math.max(
         0,
-        num(env.FREE_PER_USER_PER_DAY, 1) - freeUsed
+        freePerUserPerDay(env) - freeUsed
       ),
       session_expires_at: user.expires_at || null,
       session_ttl_minutes: Math.round(sessionTtlSec(env) / 60),
@@ -174,6 +174,25 @@ function dayKeyUTC(d = new Date()) {
   return d.toISOString().slice(0, 10);
 }
 
+/**
+ * Host-paid free runs for the UTC day.
+ * Default 10; optional one-day promo via FREE_RUNS_PROMO_DAY + FREE_RUNS_PROMO_COUNT.
+ * Unlock time is random each day (not midnight) — see ensurePoolDay.
+ */
+function freeRunsPerDay(env, day = dayKeyUTC()) {
+  const promoDay = String(env.FREE_RUNS_PROMO_DAY || "").trim();
+  const promoCount = num(env.FREE_RUNS_PROMO_COUNT, 0);
+  if (promoDay && promoDay === day && promoCount > 0) return promoCount;
+  return num(env.FREE_RUNS_PER_DAY, 10);
+}
+
+function freePerUserPerDay(env, day = dayKeyUTC()) {
+  const promoDay = String(env.FREE_RUNS_PROMO_DAY || "").trim();
+  const promoUser = num(env.FREE_PER_USER_PROMO, 0);
+  if (promoDay && promoDay === day && promoUser > 0) return promoUser;
+  return num(env.FREE_PER_USER_PER_DAY, 1);
+}
+
 async function ensurePoolDay(env, day = dayKeyUTC()) {
   const row = await env.DB.prepare(
     "SELECT day_key, unlock_at, used_count FROM daily_free_pool WHERE day_key = ?"
@@ -182,6 +201,7 @@ async function ensurePoolDay(env, day = dayKeyUTC()) {
     .first();
   if (row) return row;
 
+  // Stable pseudo-random unlock for the day (0 … 86399s after 00:00 UTC) — not midnight rush
   const secret = env.DAILY_POOL_SECRET || env.SESSION_SECRET || "dev-pool";
   const offset = await hmacMod(secret, day, 86400);
   const dayStart = Date.parse(`${day}T00:00:00.000Z`);
@@ -205,12 +225,13 @@ async function ensurePoolDay(env, day = dayKeyUTC()) {
 async function getPoolStatus(env) {
   const day = dayKeyUTC();
   const row = await ensurePoolDay(env, day);
-  const max = num(env.FREE_RUNS_PER_DAY, 10);
+  const max = freeRunsPerDay(env, day);
   const used = Number(row.used_count || 0);
   const now = Date.now();
   const unlockMs = Date.parse(row.unlock_at);
   const unlocked = now >= unlockMs;
   const remaining = Math.max(0, max - used);
+  const promo = String(env.FREE_RUNS_PROMO_DAY || "").trim() === day;
   return {
     day_key: day,
     unlock_at: row.unlock_at,
@@ -220,6 +241,8 @@ async function getPoolStatus(env) {
     max,
     remaining: unlocked ? remaining : 0,
     host_create_enabled: unlocked && remaining > 0,
+    promo,
+    free_per_user: freePerUserPerDay(env, day),
   };
 }
 
@@ -242,7 +265,7 @@ async function tryClaimFreeSlot(env, userId) {
   if (!pool.host_create_enabled) {
     return { ok: false, reason: "pool_locked_or_empty", pool };
   }
-  const perUser = num(env.FREE_PER_USER_PER_DAY, 1);
+  const perUser = freePerUserPerDay(env, pool.day_key);
   const used = await userFreeRunsToday(env, userId);
   if (used >= perUser) {
     return { ok: false, reason: "user_free_exhausted", pool };

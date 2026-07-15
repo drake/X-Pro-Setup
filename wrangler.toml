@@ -23,8 +23,15 @@ migrations_dir = "migrations"
 
 [vars]
 PUBLIC_ORIGIN = "https://xpro.howtomovetheneedle.com"
+# Steady-state free pool (after promo day)
 FREE_RUNS_PER_DAY = "10"
 FREE_PER_USER_PER_DAY = "1"
+# One-day host-paid promo (UTC date). After this day, back to FREE_RUNS_PER_DAY.
+# Unlock time is still random each day (not midnight) via DAILY_POOL_SECRET.
+FREE_RUNS_PROMO_DAY = "2026-07-15"
+FREE_RUNS_PROMO_COUNT = "100"
+# Optional: raise per-user cap on promo day only (0 = use FREE_PER_USER_PER_DAY)
+FREE_PER_USER_PROMO = "10"
 MAX_BOOKMARKS = "100"
 MAX_LIKES = "50"
 MAX_FOLLOWS = "25"
