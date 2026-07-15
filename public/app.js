@@ -82,12 +82,9 @@ function restartFlow() {
   state.weights = { bookmark: 75, like: 40, follow: 50, reply: 90, dm: 85 };
   if (!state.user) {
     setFlowStep(0);
-    setHost("Connect with X again for another starter build — sessions stay short on purpose.");
-    panel(
-      `<a class="btn btn-primary" href="/api/auth/x/start">Connect with X</a>
-       <a class="btn btn-ghost" href="https://pro.x.com" target="_blank" rel="noopener">Open pro.x.com</a>
-       <p class="hint">About ${state.sessionTtlMin || 60} minutes max · tokens wiped after create or disconnect.</p>`
-    );
+    setHost("Connect again — free host pool or your own X developer app for ongoing use.");
+    panel(renderConnectPanel());
+    bindConnectPanel();
     return;
   }
   startDials();
