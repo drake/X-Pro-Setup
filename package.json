@@ -2,7 +2,7 @@
   "name": "xpro-howtomovetheneedle",
   "private": false,
   "version": "0.1.0",
-  "description": "Open-source X Pro list builder from bookmarks, likes, follows & replies — Jack Principles setup. Free & self-hostable.",
+  "description": "Optional MIT starter: X signals (bookmarks, likes, follows, replies, outbound DMs) → private Lists for pro.x.com. Free host pool or BYO X app.",
   "license": "MIT",
   "type": "module",
   "scripts": {

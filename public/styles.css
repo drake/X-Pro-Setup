@@ -396,14 +396,27 @@ h3 {
 
 .connect-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1rem;
+  grid-template-columns: 1fr;
+  gap: var(--s-3);
+  margin-bottom: var(--s-3);
+}
+@media (min-width: 720px) {
+  .connect-grid {
+    /* φ split: free path major, BYO minor */
+    grid-template-columns: var(--grid-major) var(--grid-minor);
+    align-items: start;
+  }
+}
+.connect-intro {
+  margin: 0 0 var(--s-3);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: var(--lh-body);
 }
 .connect-card {
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
-  padding: 1rem 1.1rem;
+  border-radius: var(--radius-lg);
+  padding: var(--s-3) var(--s-4);
   background: rgba(0, 0, 0, 0.18);
 }
 .connect-card-byo {
@@ -411,33 +424,35 @@ h3 {
   background: linear-gradient(180deg, rgba(62, 207, 142, 0.08), transparent 50%), rgba(0, 0, 0, 0.18);
 }
 .connect-title {
-  margin: 0 0 0.5rem;
-  font-size: 1.05rem;
+  margin: 0 0 var(--s-2);
+  font-size: var(--text-md);
+  line-height: var(--lh-snug);
 }
 .field-label {
   display: block;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--muted);
-  margin: 0.35rem 0 0.25rem;
+  margin: var(--s-1) 0 var(--s-1);
 }
 .callback-code {
   display: block;
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   word-break: break-all;
-  padding: 0.45rem 0.55rem;
-  margin: 0.35rem 0 0.65rem;
-  border-radius: 8px;
+  padding: var(--s-2);
+  margin: var(--s-1) 0 var(--s-2);
+  border-radius: var(--radius-sm);
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--accent2);
 }
 .billing-banner {
-  font-size: 0.88rem;
-  padding: 0.55rem 0.75rem;
-  border-radius: 10px;
-  margin: 0 0 1rem;
+  font-size: var(--text-sm);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--radius);
+  margin: 0 0 var(--s-3);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  line-height: var(--lh-snug);
 }
 .billing-banner.is-byo {
   background: rgba(62, 207, 142, 0.1);
@@ -449,30 +464,66 @@ h3 {
   border-color: rgba(91, 140, 255, 0.3);
   color: var(--muted);
 }
+.connect-alt { margin-top: var(--s-2); }
+.connect-foot { margin-top: var(--s-3); }
+
+/* Landing paths */
+.paths { margin: var(--s-5) 0; }
+.path-card h2 { margin-bottom: var(--s-2); }
+.path-lead {
+  color: var(--muted);
+  margin: 0 0 var(--s-3);
+  font-size: var(--text-sm);
+  line-height: var(--lh-body);
+}
+.path-list {
+  margin: 0 0 var(--s-4);
+  padding-left: 1.15rem;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: var(--lh-body);
+}
+.path-list li { margin: var(--s-1) 0; }
+.inline-code {
+  font-size: var(--text-xs);
+  word-break: break-all;
+  color: var(--accent2);
+}
+.hero-sub { margin: var(--s-2) 0 0; }
+.hero-cta-center { justify-content: center; }
+.cta-lede { margin: 0 auto var(--s-4); max-width: var(--measure); }
+.steps-numbered .step-detail {
+  display: block;
+  margin-top: var(--s-1);
+  color: var(--muted);
+  font-weight: 400;
+  font-size: var(--text-sm);
+  line-height: var(--lh-body);
+}
 
 /* Flow progress */
 .flow-progress {
-  margin: 0 0 1rem;
+  margin: 0 0 var(--s-3);
 }
 .flow-steps {
   list-style: none;
   display: flex;
-  gap: 0.25rem;
+  gap: var(--s-1);
   margin: 0;
   padding: 0;
   overflow-x: auto;
 }
 .flow-step {
   flex: 1;
-  min-width: 3.4rem;
+  min-width: 4.2rem;
   text-align: center;
-  font-size: 0.68rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: 0.02em;
   color: var(--muted);
   opacity: 0.45;
   position: relative;
-  padding: 0.35rem 0.15rem 0.5rem;
+  padding: var(--s-1) 0.15rem var(--s-2);
   border-bottom: 2px solid rgba(255, 255, 255, 0.08);
   transition: opacity 0.25s, color 0.25s, border-color 0.25s;
 }

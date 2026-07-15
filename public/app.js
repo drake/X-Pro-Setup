@@ -106,7 +106,7 @@ async function boot() {
     state.byoHint = me.byo_x_app?.client_id_hint || null;
 
     if (!me.ok || !me.user) {
-      setHost("Connect with X — free host pool (limited) or your own X developer app (you pay X, unlimited on this host).");
+      setHost("Choose how to connect. Then you’ll set dials and approve lists.");
       panel(renderConnectPanel());
       bindConnectPanel();
       setFlowStep(0);
@@ -157,19 +157,21 @@ function renderPool(pool, userFreeLeft) {
   if (!pool.unlocked) {
     const h = Math.floor(pool.seconds_until_unlock / 3600);
     const m = Math.floor((pool.seconds_until_unlock % 3600) / 60);
-    el.textContent = `Free builds unlock in ~${h}h ${m}m (random daily drop) · then ${pool.max} host-paid slots`;
+    const promo = pool.promo ? " · promo day" : "";
+    el.textContent = `Free host pool unlocks in ~${h}h ${m}m · then ${pool.max} builds${promo}`;
     el.classList.add("is-locked");
   } else if (pool.remaining <= 0) {
-    el.textContent = `Free pool used up today (${pool.max}) · self-host or come back after tomorrow’s unlock`;
+    el.textContent = `Free host pool empty (${pool.max} used today) · use your own X app or try tomorrow`;
     el.classList.add("is-empty");
   } else {
     const yours =
       userFreeLeft == null
         ? ""
         : userFreeLeft <= 0
-          ? " · you’ve used today’s free build"
-          : ` · your free builds left: ${userFreeLeft}`;
-    el.textContent = `Free pool open: ${pool.remaining}/${pool.max} left${yours}`;
+          ? " · you’ve used your free allotment"
+          : ` · your free left: ${userFreeLeft}`;
+    const promo = pool.promo ? " · promo" : "";
+    el.textContent = `Free host pool: ${pool.remaining}/${pool.max} left${yours}${promo}`;
     el.classList.add(userFreeLeft === 0 ? "is-empty" : "is-open");
   }
 }
@@ -257,21 +259,23 @@ function renderConnectPanel() {
   const ttl = state.sessionTtlMin || 60;
   const cb = "https://xpro.howtomovetheneedle.com/api/auth/x/callback";
   return `
+    <p class="connect-intro">Two ways in. Same app after login — only who pays for the X API changes.</p>
     <div class="connect-grid">
       <div class="connect-card">
-        <p class="card-kicker">Host free pool</p>
-        <h3 class="connect-title">Quick start (host pays X)</h3>
-        <p class="hint">Limited free builds. Short session · tokens wiped after create.</p>
-        <a class="btn btn-primary" href="/api/auth/x/start">Connect with host app</a>
+        <p class="card-kicker">Path A · try it</p>
+        <h3 class="connect-title">Free host pool</h3>
+        <p class="hint">Limited builds per day (host pays X). Session ~${ttl} min. Tokens wiped after create.</p>
+        <a class="btn btn-primary" href="/api/auth/x/start">Connect with free host app</a>
       </div>
       <div class="connect-card connect-card-byo">
-        <p class="card-kicker">Bring your own X app</p>
-        <h3 class="connect-title">Ongoing use (you pay X)</h3>
+        <p class="card-kicker">Path B · ongoing</p>
+        <h3 class="connect-title">Your X developer app</h3>
         <p class="hint">
-          Paste OAuth 2.0 <strong>Client ID + Secret</strong> from
+          You pay X. Unlimited on this site. OAuth 2.0 Client ID + Secret only
+          (not Consumer Key / Bearer) from
           <a href="https://developer.x.com" target="_blank" rel="noopener">developer.x.com</a>.
-          Callback must be exactly:
         </p>
+        <p class="hint"><strong>Callback must match exactly:</strong></p>
         <code class="callback-code">${cb}</code>
         <label class="field-label" for="byo-client-id">Client ID</label>
         <input class="field" id="byo-client-id" autocomplete="off" spellcheck="false" placeholder="OAuth 2.0 Client ID" />
@@ -281,10 +285,14 @@ function renderConnectPanel() {
         <p class="hint" id="byo-status"></p>
       </div>
     </div>
-    <a class="btn btn-ghost" href="https://pro.x.com" target="_blank" rel="noopener">Open pro.x.com instead</a>
-    <p class="hint"><strong>Not required · not affiliated with X or X Corp.</strong>
-      Built by <a href="https://x.com/JonathanDrake" target="_blank" rel="noopener">@JonathanDrake</a>.
-      ~${ttl} min sessions · secrets encrypted on this host · never commit secrets to git.</p>
+    <div class="row connect-alt">
+      <a class="btn btn-ghost" href="https://pro.x.com" target="_blank" rel="noopener">Skip — open pro.x.com</a>
+      <a class="btn btn-ghost" href="/">Back to home</a>
+    </div>
+    <p class="hint connect-foot">
+      <strong>Optional tool · not affiliated with X.</strong>
+      Secrets encrypted · short sessions · we never post as you.
+    </p>
   `;
 }
 
@@ -324,19 +332,19 @@ function startDials() {
   const ttl = state.sessionTtlMin || 60;
   const billing =
     state.billing === "user_x_app" || state.hasByo
-      ? `Billing: your X developer app${state.byoHint ? ` (${state.byoHint})` : ""} — host free pool not used.`
-      : "Billing: host free pool (limited). For unlimited ongoing use, disconnect and connect with your own X app.";
+      ? `Paying with your X app${state.byoHint ? ` (${state.byoHint})` : ""} — not the free host pool.`
+      : "Paying with free host pool (limited). Need more? Disconnect and connect with your own X app.";
   setHost(
-    `@${state.user.username} — set how much each signal should count. Includes people you DMed (outbound only). Starter lists for pro.x.com — not a Pro replacement.`
+    `@${state.user.username} — set the dials, then scan. Higher weight = that signal matters more when we pick people.`
   );
   panel(`
     <p class="billing-banner ${state.hasByo ? "is-byo" : "is-host"}">${billing}</p>
     <div class="sliders" id="sliders">
-      ${sliderRow("bookmark", "Bookmarks", "Accounts from posts you saved (strong intent)", state.weights.bookmark)}
-      ${sliderRow("like", "Likes", "Accounts from posts you liked recently (broader)", state.weights.like)}
-      ${sliderRow("follow", "Recent follows", "People you just added to your feed", state.weights.follow)}
-      ${sliderRow("reply", "Replies", "People you actually talk to in replies", state.weights.reply)}
-      ${sliderRow("dm", "DMs you sent", "1:1 chats you messaged (not inbound spam · ~30 days)", state.weights.dm)}
+      ${sliderRow("bookmark", "Bookmarks", "Posts you saved — strongest “come back to this” signal", state.weights.bookmark)}
+      ${sliderRow("like", "Likes", "Posts you liked — broader taste, more noise", state.weights.like)}
+      ${sliderRow("follow", "Recent follows", "Accounts you recently added to your feed", state.weights.follow)}
+      ${sliderRow("reply", "Replies", "People you reply to — real conversations", state.weights.reply)}
+      ${sliderRow("dm", "DMs you sent", "People you messaged (not DMs others sent you)", state.weights.dm)}
     </div>
     <div class="row presets">
       <button type="button" class="chip" data-preset="balanced">Balanced</button>
@@ -345,10 +353,8 @@ function startDials() {
       <button type="button" class="chip" data-preset="discovery">Follows first</button>
       <button type="button" class="chip" data-preset="dms">DMs first</button>
     </div>
-    <p class="hint">Higher = more weight when ranking people. Zero a dial to ignore that signal. <strong>Reconnect X</strong> if DMs fail (new <code>dm.read</code> permission). Session ~${ttl} min.</p>
-    <button type="button" class="btn btn-primary" id="scan">Scan & propose lists</button>
-    <p class="hint" style="margin-top:0.85rem">Or skip this app and build lists manually in
-      <a href="https://pro.x.com" target="_blank" rel="noopener">pro.x.com</a>.</p>
+    <p class="hint">Drag 0–100. Zero ignores that signal. If DMs fail, reconnect once so X grants <code>dm.read</code>. Session ~${ttl} min.</p>
+    <button type="button" class="btn btn-primary" id="scan">Scan &amp; propose lists</button>
   `);
 
   bindSliders();

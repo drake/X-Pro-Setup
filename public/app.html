@@ -27,10 +27,10 @@
 
     <nav class="flow-progress" id="flow-progress" aria-label="Setup progress">
       <ol class="flow-steps">
-        <li class="flow-step" data-step="0"><span>Start</span></li>
-        <li class="flow-step" data-step="1"><span>Dials</span></li>
-        <li class="flow-step" data-step="2"><span>Plan</span></li>
-        <li class="flow-step" data-step="3"><span>Pro</span></li>
+        <li class="flow-step" data-step="0"><span>1 · Connect</span></li>
+        <li class="flow-step" data-step="1"><span>2 · Dials</span></li>
+        <li class="flow-step" data-step="2"><span>3 · Lists</span></li>
+        <li class="flow-step" data-step="3"><span>4 · Pro</span></li>
       </ol>
     </nav>
 
@@ -40,26 +40,31 @@
     </section>
 
     <section class="card wide hidden" id="proposal-panel">
-      <p class="card-kicker">Starter lists for Pro</p>
-      <h2>Review your lists</h2>
+      <p class="card-kicker">Step 3 · Review</p>
+      <h2>Your proposed lists</h2>
       <p class="deck-name" id="deck-name"></p>
       <p class="taste" id="taste"></p>
-      <p class="fine">These private Lists are a <strong>starting point</strong> for pro.x.com — not a full Pro replacement. Create them, then pin each as a column in a new deck.</p>
+      <p class="fine">
+        Private Lists on your X account. Nothing is final until you click create.
+        Next you’ll pin each list as a column in a <strong>new Pro deck</strong>.
+      </p>
       <div id="lists"></div>
       <div class="row">
-        <button type="button" class="btn btn-primary" id="create-lists">Create deck lists on X</button>
-        <button type="button" class="btn btn-ghost" id="restart">Start over</button>
+        <button type="button" class="btn btn-primary" id="create-lists">Create these lists on X</button>
+        <button type="button" class="btn btn-ghost" id="restart">Back to dials</button>
       </div>
-      <p class="fine" id="apply-status">Creates private Lists on your account. You’ll pin them into a new Pro deck next (X has no public deck API).</p>
+      <p class="fine" id="apply-status">
+        Creates Lists only (not a Pro deck — X has no public deck API).
+      </p>
     </section>
 
     <section class="card wide hidden" id="done-panel">
-      <p class="card-kicker">Almost there</p>
-      <h2>Put these lists in a new Pro deck</h2>
+      <p class="card-kicker">Step 4 · Pro</p>
+      <h2>Lists are live — finish in Pro</h2>
       <p class="deck-name" id="done-deck-name"></p>
       <p class="taste" id="done-blurb">
-        Your Lists are live (with people in them). Pro decks can’t be created by third-party apps —
-        open Pro and build a <strong>new deck that contains only these lists</strong> as columns.
+        Your Lists exist on X with members. Open Pro, make a <strong>new deck</strong>,
+        and add each list as a column.
       </p>
 
       <figure class="pro-walk" id="pro-walk" aria-label="Animated walkthrough: put your lists into a new Pro deck">
