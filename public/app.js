@@ -620,15 +620,17 @@ function buildDeckRecipe(deckName, lists) {
   const lines = [
     `X Pro deck: ${deckName}`,
     ``,
-    `1. Open https://pro.x.com`,
-    `2. Create a NEW deck named: ${deckName}`,
-    `3. Add ONLY these Lists as columns (in order):`,
+    `1. Open https://pro.x.com and log in`,
+    `2. Optional: left nav More → Tour (X’s in-app walkthrough)`,
+    `3. Create a NEW deck named: ${deckName}`,
+    `4. Add ONLY these Lists as columns (in order):`,
   ];
   lists.forEach((L, i) => {
     const url = L.url || (L.x_list_id ? `https://x.com/i/lists/${L.x_list_id}` : "");
     lines.push(`   Column ${i + 1}: ${L.name}${url ? ` — ${url}` : ""}`);
   });
   lines.push(``, `Add column → Lists → pick each name above.`);
+  lines.push(`Help: https://help.x.com/en/using-x/how-to-use-x-pro`);
   return lines.join("\n");
 }
 
@@ -825,7 +827,7 @@ function startProWalkthrough(deckName, lists) {
   const steps = [];
 
   steps.push({
-    caption: "Open pro.x.com in your browser",
+    caption: "Open pro.x.com and log in",
     checklist: 0,
     duration: 2000,
     run() {
@@ -833,6 +835,16 @@ function startProWalkthrough(deckName, lists) {
       placeCursor("78%", "12%");
       if (deckbarTitle) deckbarTitle.textContent = "X Pro";
       if (deckbarSub) deckbarSub.textContent = "Pick or create a deck";
+    },
+  });
+
+  steps.push({
+    caption: "Optional: More → Tour (X’s own walkthrough)",
+    checklist: 0,
+    duration: 2200,
+    run() {
+      placeCursor("8%", "88%");
+      if (deckbarSub) deckbarSub.textContent = "More menu → Tour";
     },
   });
 
