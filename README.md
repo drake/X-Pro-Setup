@@ -118,9 +118,5 @@ This public host is **not** meant to keep people logged into X forever:
 
 Tune in `wrangler.toml` `[vars]` and redeploy. Lists already created on the user’s X account are unaffected.
 
-## Product docs
-- Plan: `~/.hermes/plans/2026-07-15_103354-x-bookmark-lists-product.md`
-- Jack Principles: conversational pacing + illusion of awareness
-
 ## License
 MIT — free software. X API and xAI usage are billed by those providers.
