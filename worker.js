@@ -18,6 +18,7 @@ const SCOPES = [
   "follows.read",
   "list.read",
   "list.write",
+  "dm.read", // people you messaged (outbound only)
 ].join(" ");
 
 /** Session cookie + DB row lifetime (minutes). Default 60. */
@@ -793,16 +794,39 @@ async function processRun(env, runId, user, quiz) {
     console.error("reply scan", e);
   }
 
+  // Outbound DMs only (sender_id === you). Inbound spam is ignored.
+  let dms = { counts: {}, users: {}, events_scanned: 0, note: null };
+  try {
+    dms = await fetchOutboundDmTargets(
+      env,
+      token,
+      xUserId,
+      num(env.MAX_DM_EVENTS, 100),
+      user.id
+    );
+  } catch (e) {
+    console.error("dm scan", e);
+    dms.note = String(e.message || e).slice(0, 200);
+  }
+
   const signals = {
     bookmarks: bookmarks.posts,
     likes: likes.posts,
     follows: follows.users,
     reply_counts: replies.counts,
+    dm_counts: dms.counts,
+    dm_meta: {
+      events_scanned: dms.events_scanned,
+      note: dms.note,
+      window: "up to ~30 days (X API retention)",
+      filter: "outbound_only_1to1",
+    },
     users: {
       ...bookmarks.users,
       ...likes.users,
       ...follows.userMap,
       ...replies.users,
+      ...dms.users,
     },
   };
 
@@ -1014,13 +1038,103 @@ async function fetchReplyTargets(env, token, xUserId, maxPosts, userId) {
   return { counts, users };
 }
 
+/**
+ * People the authenticated user has messaged (outbound only).
+ * - MessageCreate events where sender_id === you
+ * - 1:1 conversations only (skip groups)
+ * - Never adds someone solely because they DMed you (spam filter)
+ * X API retains ~30 days of DM events.
+ */
+async function fetchOutboundDmTargets(env, token, xUserId, maxEvents, userId) {
+  const me = String(xUserId);
+  const counts = {};
+  const users = {};
+  let events_scanned = 0;
+  let tokenNext = null;
+  const cap = Math.max(10, Math.min(200, maxEvents || 100));
+
+  while (events_scanned < cap) {
+    const n = Math.min(100, cap - events_scanned);
+    let path =
+      `/dm_events?max_results=${n}` +
+      `&event_types=MessageCreate` +
+      `&dm_event.fields=id,event_type,sender_id,participant_ids,dm_conversation_id,created_at` +
+      `&expansions=sender_id,participant_ids` +
+      `&user.fields=username,name,description,public_metrics,profile_image_url`;
+    if (tokenNext) path += `&pagination_token=${encodeURIComponent(tokenNext)}`;
+
+    const data = await xFetch(env, token, path, {}, userId);
+    for (const u of data.includes?.users || []) users[u.id] = u;
+
+    const batch = data.data || [];
+    if (!batch.length) break;
+    events_scanned += batch.length;
+
+    for (const ev of batch) {
+      if (ev.event_type && ev.event_type !== "MessageCreate") continue;
+      if (String(ev.sender_id) !== me) continue; // outbound only — skip inbound spam
+
+      let parts = (ev.participant_ids || []).map(String).filter(Boolean);
+      // Prefer strict 1:1 so group chats don't pollute the list
+      if (parts.length > 2) continue;
+      if (parts.length < 2 && ev.dm_conversation_id) {
+        // Some payloads omit participants; conversation id is often "id1-id2"
+        const bits = String(ev.dm_conversation_id).split(/[-_]/);
+        if (bits.length === 2 && bits.every((b) => /^\d+$/.test(b))) {
+          parts = bits;
+        }
+      }
+      if (parts.length !== 2) continue;
+      if (!parts.includes(me)) continue;
+
+      const other = parts.find((id) => id !== me);
+      if (!other || other === me) continue;
+      counts[other] = (counts[other] || 0) + 1;
+    }
+
+    tokenNext = data.meta?.next_token;
+    if (!tokenNext) break;
+  }
+
+  // Hydrate any missing usernames for top targets
+  const need = Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([id]) => id)
+    .filter((id) => !users[id])
+    .slice(0, 25);
+  if (need.length) {
+    try {
+      const udata = await xFetch(
+        env,
+        token,
+        `/users?ids=${need.join(
+          ","
+        )}&user.fields=username,name,description,public_metrics,profile_image_url`,
+        {},
+        userId
+      );
+      for (const u of udata.data || []) users[u.id] = u;
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  return { counts, users, events_scanned };
+}
+
 /* ───────────────────── Analyzer ───────────────────── */
 
 /** UI sliders are 0–100; defaults match public/app.js */
-const DEFAULT_WEIGHTS = { bookmark: 75, like: 40, follow: 50, reply: 90 };
+const DEFAULT_WEIGHTS = {
+  bookmark: 75,
+  like: 40,
+  follow: 50,
+  reply: 90,
+  dm: 85,
+};
 
 /** Base per-signal scores before slider multipliers (slider 100 = 1× base). */
-const BASE_SIGNAL = { bookmark: 3, like: 1.5, follow: 2, reply: 4 };
+const BASE_SIGNAL = { bookmark: 3, like: 1.5, follow: 2, reply: 4, dm: 5 };
 
 function normalizeWeights(raw) {
   const w = raw && typeof raw === "object" ? raw : {};
@@ -1034,6 +1148,7 @@ function normalizeWeights(raw) {
     like: clamp(w.like, DEFAULT_WEIGHTS.like),
     follow: clamp(w.follow, DEFAULT_WEIGHTS.follow),
     reply: clamp(w.reply, DEFAULT_WEIGHTS.reply),
+    dm: clamp(w.dm, DEFAULT_WEIGHTS.dm),
   };
 }
 
@@ -1053,9 +1168,10 @@ function analyzeSignals(signals, quiz = {}, weightsIn = {}) {
     like: weightMul(weights.like),
     follow: weightMul(weights.follow),
     reply: weightMul(weights.reply),
+    dm: weightMul(weights.dm),
   };
 
-  const scores = new Map(); // id -> { score, bookmark, like, follow, reply, username, name, desc }
+  const scores = new Map(); // id -> { score, bookmark, like, follow, reply, dm, ... }
 
   function bump(id, field, w, userHint) {
     if (!id) return;
@@ -1068,6 +1184,7 @@ function analyzeSignals(signals, quiz = {}, weightsIn = {}) {
         like: 0,
         follow: 0,
         reply: 0,
+        dm: 0,
         username: userHint?.username,
         name: userHint?.name,
         description: userHint?.description || "",
@@ -1096,6 +1213,16 @@ function analyzeSignals(signals, quiz = {}, weightsIn = {}) {
   }
   for (const [id, c] of Object.entries(signals.reply_counts || {})) {
     bump(id, "reply", BASE_SIGNAL.reply * Number(c) * mul.reply, umap[id]);
+  }
+  // Outbound DM targets only (already filtered in fetch)
+  for (const [id, c] of Object.entries(signals.dm_counts || {})) {
+    const n = Number(c) || 0;
+    if (n <= 0) continue;
+    // One score contribution per person, scaled by how often you messaged them
+    bump(id, "dm", BASE_SIGNAL.dm * Math.min(n, 10) * mul.dm, umap[id]);
+    // Keep true message count on the row for reasons
+    const e = scores.get(id);
+    if (e) e.dm = n;
   }
 
   // quiz boost: simple keyword overlap with bio
@@ -1134,6 +1261,8 @@ function analyzeSignals(signals, quiz = {}, weightsIn = {}) {
     mul.reply > 0 ? ranked.filter((e) => e.reply > 0).slice(0, 15) : [];
   const fresh =
     mul.follow > 0 ? ranked.filter((e) => e.follow > 0).slice(0, 15) : [];
+  const messaged =
+    mul.dm > 0 ? ranked.filter((e) => e.dm > 0).slice(0, 15) : [];
 
   // Theme bag from bookmarks+likes text
   const tags = {};
@@ -1157,6 +1286,7 @@ function analyzeSignals(signals, quiz = {}, weightsIn = {}) {
     return "Recent follows";
   })();
 
+  // Order: bookmarks → outbound DMs → replies → follows (DM list keeps people you messaged)
   const lists = [];
   if (core.length) {
     lists.push({
@@ -1167,6 +1297,17 @@ function analyzeSignals(signals, quiz = {}, weightsIn = {}) {
       ),
       private: true,
       members: core.map(memberRow),
+    });
+  }
+  if (messaged.length) {
+    lists.push({
+      key: "dms",
+      name: brandListName("You messaged"),
+      description: brandListDesc(
+        "People you DMed (outbound only · not inbound spam · ~30 days)"
+      ),
+      private: true,
+      members: messaged.map(memberRow),
     });
   }
   if (talk.length) {
@@ -1261,6 +1402,10 @@ function memberRow(e) {
   if (e.like) bits.push(`${e.like} like${e.like > 1 ? "s" : ""}`);
   if (e.follow) bits.push("recent follow");
   if (e.reply) bits.push("you reply");
+  if (e.dm)
+    bits.push(
+      `you messaged${e.dm > 1 ? ` (${e.dm}×)` : ""}`
+    );
   if (e.quiz_hits) bits.push("matches your words");
   return {
     user_id: e.user_id,
@@ -1282,6 +1427,7 @@ function buildSummary(topAuthors, topTags, weights = {}) {
   if (weights.like > 0) parts.push("likes");
   if (weights.follow > 0) parts.push("follows");
   if (weights.reply > 0) parts.push("replies");
+  if (weights.dm > 0) parts.push("outbound DMs");
   let s = `Starter lists ranked from ${parts.join(", ") || "your X signals"}.`;
   if (names) s += ` Strong signals around ${names}.`;
   if (topics) s += ` Topics: ${topics}.`;

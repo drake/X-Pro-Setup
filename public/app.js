@@ -11,6 +11,7 @@ const state = {
     like: 40,
     follow: 50,
     reply: 90,
+    dm: 85, // people you messaged (outbound only)
   },
   run: null,
   proposal: null,
@@ -78,7 +79,7 @@ function restartFlow() {
   show("done-panel", false);
   show("stage", true);
   state.run = state.proposal = null;
-  state.weights = { bookmark: 75, like: 40, follow: 50, reply: 90 };
+  state.weights = { bookmark: 75, like: 40, follow: 50, reply: 90, dm: 85 };
   if (!state.user) {
     setFlowStep(0);
     setHost("Connect with X again for another starter build — sessions stay short on purpose.");
@@ -261,7 +262,7 @@ function startDials() {
   setFlowStep(1);
   const ttl = state.sessionTtlMin || 60;
   setHost(
-    `@${state.user.username} — set how much each signal should count. Then scan builds starter lists you can pin in pro.x.com. This does not replace Pro; it only gets columns on the board faster.`
+    `@${state.user.username} — set how much each signal should count. Includes people you DMed (outbound only, not spam who messaged you). Starter lists for pro.x.com — not a Pro replacement.`
   );
   panel(`
     <div class="sliders" id="sliders">
@@ -269,14 +270,16 @@ function startDials() {
       ${sliderRow("like", "Likes", "Accounts from posts you liked recently (broader)", state.weights.like)}
       ${sliderRow("follow", "Recent follows", "People you just added to your feed", state.weights.follow)}
       ${sliderRow("reply", "Replies", "People you actually talk to in replies", state.weights.reply)}
+      ${sliderRow("dm", "DMs you sent", "1:1 chats you messaged first (not inbound spam · ~30 days)", state.weights.dm)}
     </div>
     <div class="row presets">
       <button type="button" class="chip" data-preset="balanced">Balanced</button>
       <button type="button" class="chip" data-preset="intent">Saves first</button>
       <button type="button" class="chip" data-preset="social">Conversations first</button>
       <button type="button" class="chip" data-preset="discovery">Follows first</button>
+      <button type="button" class="chip" data-preset="dms">DMs first</button>
     </div>
-    <p class="hint">Higher = more weight when ranking people. Zero a dial to ignore that signal. Session ~${ttl} min.</p>
+    <p class="hint">Higher = more weight when ranking people. Zero a dial to ignore that signal. <strong>Reconnect X</strong> if DMs fail (new <code>dm.read</code> permission). Session ~${ttl} min.</p>
     <button type="button" class="btn btn-primary" id="scan">Scan & propose lists</button>
     <p class="hint" style="margin-top:0.85rem">Or skip this app and build lists manually in
       <a href="https://pro.x.com" target="_blank" rel="noopener">pro.x.com</a>.</p>
@@ -286,10 +289,16 @@ function startDials() {
   document.querySelectorAll("[data-preset]").forEach((btn) => {
     btn.onclick = () => {
       const p = btn.dataset.preset;
-      if (p === "balanced") state.weights = { bookmark: 75, like: 40, follow: 50, reply: 90 };
-      if (p === "intent") state.weights = { bookmark: 100, like: 45, follow: 30, reply: 55 };
-      if (p === "social") state.weights = { bookmark: 40, like: 35, follow: 50, reply: 100 };
-      if (p === "discovery") state.weights = { bookmark: 45, like: 40, follow: 100, reply: 35 };
+      if (p === "balanced")
+        state.weights = { bookmark: 75, like: 40, follow: 50, reply: 90, dm: 85 };
+      if (p === "intent")
+        state.weights = { bookmark: 100, like: 45, follow: 30, reply: 55, dm: 40 };
+      if (p === "social")
+        state.weights = { bookmark: 40, like: 35, follow: 50, reply: 100, dm: 90 };
+      if (p === "discovery")
+        state.weights = { bookmark: 45, like: 40, follow: 100, reply: 35, dm: 30 };
+      if (p === "dms")
+        state.weights = { bookmark: 20, like: 15, follow: 20, reply: 40, dm: 100 };
       syncSliderUI();
       document.querySelectorAll("[data-preset]").forEach((c) => c.classList.remove("active"));
       btn.classList.add("active");
@@ -312,19 +321,18 @@ function sliderRow(key, label, hint, value) {
 }
 
 function bindSliders() {
-  ["bookmark", "like", "follow", "reply"].forEach((key) => {
+  ["bookmark", "like", "follow", "reply", "dm"].forEach((key) => {
     const input = $("w-" + key);
     if (!input) return;
     input.oninput = () => {
       state.weights[key] = Number(input.value);
       $("v-" + key).textContent = String(input.value);
-      // Jack awareness: zero all but one? optional soft host line once
     };
   });
 }
 
 function syncSliderUI() {
-  ["bookmark", "like", "follow", "reply"].forEach((key) => {
+  ["bookmark", "like", "follow", "reply", "dm"].forEach((key) => {
     const input = $("w-" + key);
     if (!input) return;
     input.value = state.weights[key];
@@ -341,7 +349,8 @@ function renderScanPanel() {
         <li data-scan="1"><span class="scan-dot"></span> Likes (last 50)</li>
         <li data-scan="2"><span class="scan-dot"></span> Follows (last 25)</li>
         <li data-scan="3"><span class="scan-dot"></span> Reply graph</li>
-        <li data-scan="4"><span class="scan-dot"></span> Building deck plan…</li>
+        <li data-scan="4"><span class="scan-dot"></span> DMs you sent (not inbound)</li>
+        <li data-scan="5"><span class="scan-dot"></span> Building deck plan…</li>
       </ul>
       <p class="hint" style="margin-top:1rem">Nothing is created on X until you approve the plan.</p>
     </div>
@@ -367,7 +376,7 @@ function stopScanAnim() {
 }
 
 async function startScan() {
-  ["bookmark", "like", "follow", "reply"].forEach((key) => {
+  ["bookmark", "like", "follow", "reply", "dm"].forEach((key) => {
     const input = $("w-" + key);
     if (input) state.weights[key] = Number(input.value);
   });
@@ -376,7 +385,8 @@ async function startScan() {
     state.weights.bookmark +
       state.weights.like +
       state.weights.follow +
-      state.weights.reply ===
+      state.weights.reply +
+      state.weights.dm ===
     0;
   if (allZero) {
     setHost("Turn at least one dial above zero so there’s a signal to rank people by.");
@@ -384,7 +394,7 @@ async function startScan() {
   }
 
   setHost(
-    `Scanning with dials — bookmarks ${state.weights.bookmark}, likes ${state.weights.like}, follows ${state.weights.follow}, replies ${state.weights.reply}. Nothing is created until you approve.`
+    `Scanning — bookmarks ${state.weights.bookmark}, likes ${state.weights.like}, follows ${state.weights.follow}, replies ${state.weights.reply}, DMs you sent ${state.weights.dm}. Nothing is created until you approve.`
   );
   renderScanPanel();
   const scanBtn = $("scan");
