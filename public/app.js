@@ -104,13 +104,14 @@ async function boot() {
     renderPool(me.pool, me.free_remaining_for_user);
     renderSessionBanner();
 
+    state.hasByo = !!me.has_byo_x_app;
+    state.billing = me.billing || null;
+    state.byoHint = me.byo_x_app?.client_id_hint || null;
+
     if (!me.ok || !me.user) {
-      setHost("Connect with X to use this shortcut — or skip it and build lists in Pro by hand.");
-      panel(
-        `<a class="btn btn-primary" href="/api/auth/x/start">Connect with X</a>
-         <a class="btn btn-ghost" href="https://pro.x.com" target="_blank" rel="noopener">Open pro.x.com instead</a>
-         <p class="hint"><strong>Not required · not affiliated with X or X Corp.</strong> Built by <a href="https://x.com/JonathanDrake" target="_blank" rel="noopener">@JonathanDrake</a>. Everything here can be done manually in X and Pro. Read + list write · ~${state.sessionTtlMin} min session · tokens wiped after.</p>`
-      );
+      setHost("Connect with X — free host pool (limited) or your own X developer app (you pay X, unlimited on this host).");
+      panel(renderConnectPanel());
+      bindConnectPanel();
       setFlowStep(0);
       return;
     }
@@ -246,12 +247,75 @@ async function hardDisconnect() {
   }
   state.user = null;
   state.sessionExpiresAt = null;
+  // Keep hasByo — credentials stay for next connect with same app
   if (sessionTicker) clearInterval(sessionTicker);
   const who = $("who");
   if (who) who.textContent = "";
   const logout = $("logout");
   if (logout) logout.classList.add("hidden");
   renderSessionBanner();
+}
+
+function renderConnectPanel() {
+  const ttl = state.sessionTtlMin || 60;
+  const cb = "https://xpro.howtomovetheneedle.com/api/auth/x/callback";
+  return `
+    <div class="connect-grid">
+      <div class="connect-card">
+        <p class="card-kicker">Host free pool</p>
+        <h3 class="connect-title">Quick start (host pays X)</h3>
+        <p class="hint">Limited free builds. Short session · tokens wiped after create.</p>
+        <a class="btn btn-primary" href="/api/auth/x/start">Connect with host app</a>
+      </div>
+      <div class="connect-card connect-card-byo">
+        <p class="card-kicker">Bring your own X app</p>
+        <h3 class="connect-title">Ongoing use (you pay X)</h3>
+        <p class="hint">
+          Paste OAuth 2.0 <strong>Client ID + Secret</strong> from
+          <a href="https://developer.x.com" target="_blank" rel="noopener">developer.x.com</a>.
+          Callback must be exactly:
+        </p>
+        <code class="callback-code">${cb}</code>
+        <label class="field-label" for="byo-client-id">Client ID</label>
+        <input class="field" id="byo-client-id" autocomplete="off" spellcheck="false" placeholder="OAuth 2.0 Client ID" />
+        <label class="field-label" for="byo-client-secret">Client Secret</label>
+        <input class="field" id="byo-client-secret" type="password" autocomplete="off" spellcheck="false" placeholder="OAuth 2.0 Client Secret" />
+        <button type="button" class="btn btn-primary" id="byo-connect">Save &amp; connect with my app</button>
+        <p class="hint" id="byo-status"></p>
+      </div>
+    </div>
+    <a class="btn btn-ghost" href="https://pro.x.com" target="_blank" rel="noopener">Open pro.x.com instead</a>
+    <p class="hint"><strong>Not required · not affiliated with X or X Corp.</strong>
+      Built by <a href="https://x.com/JonathanDrake" target="_blank" rel="noopener">@JonathanDrake</a>.
+      ~${ttl} min sessions · secrets encrypted on this host · never commit secrets to git.</p>
+  `;
+}
+
+function bindConnectPanel() {
+  const btn = $("byo-connect");
+  if (!btn) return;
+  btn.onclick = async () => {
+    const client_id = ($("byo-client-id")?.value || "").trim();
+    const client_secret = ($("byo-client-secret")?.value || "").trim();
+    const status = $("byo-status");
+    if (!client_id || !client_secret) {
+      if (status) status.textContent = "Client ID and Client Secret are both required.";
+      return;
+    }
+    btn.disabled = true;
+    if (status) status.textContent = "Saving credentials…";
+    try {
+      const data = await api("/api/auth/x/byo", {
+        method: "POST",
+        body: JSON.stringify({ client_id, client_secret }),
+      });
+      if (status) status.textContent = "Redirecting to X…";
+      location.href = data.start_url || "/api/auth/x/start?mode=byo";
+    } catch (e) {
+      btn.disabled = false;
+      if (status) status.textContent = e.message || "Could not save credentials.";
+    }
+  };
 }
 
 /** Connected: go straight to signal dials (no quiz). */
@@ -261,16 +325,21 @@ function startDials() {
   show("stage", true);
   setFlowStep(1);
   const ttl = state.sessionTtlMin || 60;
+  const billing =
+    state.billing === "user_x_app" || state.hasByo
+      ? `Billing: your X developer app${state.byoHint ? ` (${state.byoHint})` : ""} — host free pool not used.`
+      : "Billing: host free pool (limited). For unlimited ongoing use, disconnect and connect with your own X app.";
   setHost(
-    `@${state.user.username} — set how much each signal should count. Includes people you DMed (outbound only, not spam who messaged you). Starter lists for pro.x.com — not a Pro replacement.`
+    `@${state.user.username} — set how much each signal should count. Includes people you DMed (outbound only). Starter lists for pro.x.com — not a Pro replacement.`
   );
   panel(`
+    <p class="billing-banner ${state.hasByo ? "is-byo" : "is-host"}">${billing}</p>
     <div class="sliders" id="sliders">
       ${sliderRow("bookmark", "Bookmarks", "Accounts from posts you saved (strong intent)", state.weights.bookmark)}
       ${sliderRow("like", "Likes", "Accounts from posts you liked recently (broader)", state.weights.like)}
       ${sliderRow("follow", "Recent follows", "People you just added to your feed", state.weights.follow)}
       ${sliderRow("reply", "Replies", "People you actually talk to in replies", state.weights.reply)}
-      ${sliderRow("dm", "DMs you sent", "1:1 chats you messaged first (not inbound spam · ~30 days)", state.weights.dm)}
+      ${sliderRow("dm", "DMs you sent", "1:1 chats you messaged (not inbound spam · ~30 days)", state.weights.dm)}
     </div>
     <div class="row presets">
       <button type="button" class="chip" data-preset="balanced">Balanced</button>
@@ -442,9 +511,19 @@ async function startScan() {
         e.data?.message ||
           "The free pool isn’t available right now. It unlocks at a random time each day."
       );
-      panel(`<p class="hint">Self-host for unlimited builds, or check back after unlock. Or use Pro manually.</p>
-        <a class="btn btn-ghost" href="https://github.com/drake/X-Pro-Setup" target="_blank" rel="noopener">Self-host on GitHub</a>
-        <a class="btn btn-ghost" href="https://pro.x.com" target="_blank" rel="noopener">Open pro.x.com</a>`);
+      panel(`<p class="hint">Host free pool unavailable. For ongoing use without self-hosting: disconnect, then connect with <strong>your own X developer app</strong> (you pay X).</p>
+        <button type="button" class="btn btn-primary" id="go-byo-again">Use my X developer app</button>
+        <a class="btn btn-ghost" href="https://pro.x.com" target="_blank" rel="noopener">Open pro.x.com</a>
+        <a class="btn btn-ghost" href="https://github.com/drake/X-Pro-Setup" target="_blank" rel="noopener">Self-host</a>`);
+      const goByo = $("go-byo-again");
+      if (goByo) {
+        goByo.onclick = async () => {
+          await hardDisconnect();
+          setHost("Connect with your own X developer app — X API bills your project, not the host free pool.");
+          panel(renderConnectPanel());
+          bindConnectPanel();
+        };
+      }
       return;
     }
     setHost("Something broke mid-scan.");

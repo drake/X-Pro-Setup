@@ -104,6 +104,13 @@ async function handleApi(request, env, url, ctx) {
       )
         .bind(user.id)
         .first()),
+      has_byo_x_app: !!(await env.DB.prepare(
+        "SELECT 1 FROM user_x_apps WHERE user_id = ?"
+      )
+        .bind(user.id)
+        .first()),
+      byo_x_app: await getByoAppPublic(env, user.id),
+      billing: (await userHasByoApp(env, user.id)) ? "user_x_app" : "host_free_pool",
     });
   }
 
@@ -117,6 +124,21 @@ async function handleApi(request, env, url, ctx) {
 
   if (path === "/api/auth/logout" && method === "POST") {
     return logout(request, env);
+  }
+
+  // Save BYO OAuth app (pre-login) then redirect to /api/auth/x/start?mode=byo
+  if (path === "/api/auth/x/byo" && method === "POST") {
+    return saveByoPending(request, env);
+  }
+
+  // Clear stored BYO app for logged-in user
+  if (path === "/api/keys/x-app" && method === "DELETE") {
+    const user = await requireUser(request, env);
+    if (user instanceof Response) return user;
+    await env.DB.prepare("DELETE FROM user_x_apps WHERE user_id = ?")
+      .bind(user.id)
+      .run();
+    return json({ ok: true, cleared: true });
   }
 
   if (path === "/api/keys/xai" && method === "POST") {
@@ -285,16 +307,190 @@ async function tryClaimFreeSlot(env, userId) {
 
 /* ───────────────────── Auth / session ───────────────────── */
 
-async function startXAuth(request, env, url) {
-  if (!env.X_CLIENT_ID) {
+const BYO_COOKIE = "xpro_byo";
+
+function clientIdHint(clientId) {
+  const s = String(clientId || "");
+  if (s.length < 8) return "••••";
+  return `${s.slice(0, 4)}…${s.slice(-4)}`;
+}
+
+async function userHasByoApp(env, userId) {
+  if (!userId) return false;
+  const row = await env.DB.prepare(
+    "SELECT 1 AS ok FROM user_x_apps WHERE user_id = ?"
+  )
+    .bind(userId)
+    .first();
+  return !!row;
+}
+
+async function getByoAppPublic(env, userId) {
+  const row = await env.DB.prepare(
+    "SELECT client_id_hint, updated_at FROM user_x_apps WHERE user_id = ?"
+  )
+    .bind(userId)
+    .first();
+  if (!row) return null;
+  return { client_id_hint: row.client_id_hint, updated_at: row.updated_at };
+}
+
+/** Host or per-user BYO OAuth client credentials. */
+async function getOAuthClient(env, { userId = null, pendingId = null } = {}) {
+  if (pendingId) {
+    const row = await env.DB.prepare(
+      "SELECT client_id_enc, client_secret_enc, expires_at FROM oauth_pending WHERE id = ?"
+    )
+      .bind(pendingId)
+      .first();
+    if (!row) return null;
+    if (Date.parse(row.expires_at) < Date.now()) {
+      await env.DB.prepare("DELETE FROM oauth_pending WHERE id = ?")
+        .bind(pendingId)
+        .run();
+      return null;
+    }
+    return {
+      client_id: await decrypt(env, row.client_id_enc),
+      client_secret: await decrypt(env, row.client_secret_enc),
+      mode: "byo_pending",
+      pending_id: pendingId,
+    };
+  }
+  if (userId) {
+    const row = await env.DB.prepare(
+      "SELECT client_id_enc, client_secret_enc FROM user_x_apps WHERE user_id = ?"
+    )
+      .bind(userId)
+      .first();
+    if (row) {
+      return {
+        client_id: await decrypt(env, row.client_id_enc),
+        client_secret: await decrypt(env, row.client_secret_enc),
+        mode: "byo_user",
+      };
+    }
+  }
+  if (env.X_CLIENT_ID) {
+    return {
+      client_id: env.X_CLIENT_ID,
+      client_secret: env.X_CLIENT_SECRET || "",
+      mode: "host",
+    };
+  }
+  return null;
+}
+
+async function saveByoPending(request, env) {
+  const body = await request.json().catch(() => ({}));
+  const client_id = String(body.client_id || body.X_CLIENT_ID || "").trim();
+  const client_secret = String(body.client_secret || body.X_CLIENT_SECRET || "").trim();
+  if (!client_id || !client_secret) {
     return json(
       {
-        error:
-          "X_CLIENT_ID not configured. Set wrangler secrets for X OAuth (see README).",
+        error: "missing_credentials",
+        message: "OAuth 2.0 Client ID and Client Secret are required.",
       },
-      503
+      400
     );
   }
+  if (client_id.startsWith("AAAA") || client_secret.startsWith("AAAA")) {
+    return json(
+      {
+        error: "wrong_credential_type",
+        message:
+          "That looks like a Bearer token. Use OAuth 2.0 Client ID + Client Secret from User authentication settings.",
+      },
+      400
+    );
+  }
+
+  // Purge expired pending rows (best-effort)
+  try {
+    await env.DB.prepare(
+      "DELETE FROM oauth_pending WHERE expires_at < ?"
+    )
+      .bind(iso())
+      .run();
+  } catch (_) {
+    /* ignore */
+  }
+
+  const id = crypto.randomUUID();
+  const now = iso();
+  const exp = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+  await env.DB.prepare(
+    `INSERT INTO oauth_pending (id, client_id_enc, client_secret_enc, expires_at, created_at)
+     VALUES (?, ?, ?, ?, ?)`
+  )
+    .bind(
+      id,
+      await encrypt(env, client_id),
+      await encrypt(env, client_secret),
+      exp,
+      now
+    )
+    .run();
+
+  const headers = {
+    "Set-Cookie": `${BYO_COOKIE}=${id}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=900`,
+  };
+  return json(
+    {
+      ok: true,
+      mode: "byo",
+      start_url: "/api/auth/x/start?mode=byo",
+      callback: `${publicOrigin(env)}/api/auth/x/callback`,
+      hint: clientIdHint(client_id),
+      message:
+        "Credentials saved for 15 minutes. Continue to Connect — X API usage bills your developer app.",
+    },
+    200,
+    headers
+  );
+}
+
+async function startXAuth(request, env, url) {
+  const mode = url.searchParams.get("mode") || "host";
+  const cookies = parseCookies(request.headers.get("Cookie"));
+  const pendingId = mode === "byo" ? cookies[BYO_COOKIE] : null;
+
+  // Logged-in user reconnecting with saved BYO app
+  let userId = null;
+  if (cookies[COOKIE]) {
+    const sess = await sessionUser(request, env);
+    if (sess) userId = sess.id;
+  }
+
+  let oauth;
+  if (mode === "byo" || pendingId) {
+    oauth = await getOAuthClient(env, { pendingId: pendingId || undefined });
+    if (!oauth && userId) {
+      oauth = await getOAuthClient(env, { userId });
+    }
+    if (!oauth) {
+      return json(
+        {
+          error: "byo_missing",
+          message:
+            "No BYO X app on file. Paste Client ID + Secret first (POST /api/auth/x/byo).",
+        },
+        400
+      );
+    }
+  } else {
+    oauth = await getOAuthClient(env, {});
+    if (!oauth) {
+      return json(
+        {
+          error:
+            "X_CLIENT_ID not configured. Use BYO mode or set host wrangler secrets.",
+        },
+        503
+      );
+    }
+  }
+
   const verifier = b64url(crypto.getRandomValues(new Uint8Array(32)));
   const challenge = b64url(
     new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier)))
@@ -302,12 +498,19 @@ async function startXAuth(request, env, url) {
   const state = b64url(crypto.getRandomValues(new Uint8Array(16)));
   const redirect = `${publicOrigin(env)}/api/auth/x/callback`;
 
-  // Store PKCE in short-lived cookie (signed-ish blob)
-  const pkce = await seal(env, { verifier, state, exp: Date.now() + 15 * 60 * 1000 });
+  // Store PKCE + which OAuth client to use for token exchange
+  const pkce = await seal(env, {
+    verifier,
+    state,
+    exp: Date.now() + 15 * 60 * 1000,
+    mode: oauth.mode,
+    pending_id: oauth.pending_id || pendingId || null,
+    byo: oauth.mode !== "host",
+  });
 
   const authUrl = new URL(X_AUTH);
   authUrl.searchParams.set("response_type", "code");
-  authUrl.searchParams.set("client_id", env.X_CLIENT_ID);
+  authUrl.searchParams.set("client_id", oauth.client_id);
   authUrl.searchParams.set("redirect_uri", redirect);
   authUrl.searchParams.set("scope", SCOPES);
   authUrl.searchParams.set("state", state);
@@ -326,7 +529,7 @@ async function callbackXAuth(request, env, url) {
   const err = url.searchParams.get("error");
   if (err) {
     return Response.redirect(
-      `${publicOrigin(env)}/?error=${encodeURIComponent(err)}`,
+      `${publicOrigin(env)}/app.html?error=${encodeURIComponent(err)}`,
       302
     );
   }
@@ -335,19 +538,32 @@ async function callbackXAuth(request, env, url) {
   const cookies = parseCookies(request.headers.get("Cookie"));
   const pkce = cookies.xpro_pkce ? await unseal(env, cookies.xpro_pkce) : null;
   if (!code || !pkce || pkce.state !== state || Date.now() > pkce.exp) {
-    return Response.redirect(`${publicOrigin(env)}/?error=auth_state`, 302);
+    return Response.redirect(`${publicOrigin(env)}/app.html?error=auth_state`, 302);
+  }
+
+  let oauth;
+  if (pkce.byo || pkce.pending_id) {
+    oauth = await getOAuthClient(env, { pendingId: pkce.pending_id });
+    if (!oauth && cookies[BYO_COOKIE]) {
+      oauth = await getOAuthClient(env, { pendingId: cookies[BYO_COOKIE] });
+    }
+  } else {
+    oauth = await getOAuthClient(env, {});
+  }
+  if (!oauth) {
+    return Response.redirect(`${publicOrigin(env)}/app.html?error=oauth_client`, 302);
   }
 
   const redirect = `${publicOrigin(env)}/api/auth/x/callback`;
   const body = new URLSearchParams({
     code,
     grant_type: "authorization_code",
-    client_id: env.X_CLIENT_ID,
+    client_id: oauth.client_id,
     redirect_uri: redirect,
     code_verifier: pkce.verifier,
   });
 
-  const basic = btoa(`${env.X_CLIENT_ID}:${env.X_CLIENT_SECRET || ""}`);
+  const basic = btoa(`${oauth.client_id}:${oauth.client_secret || ""}`);
   const tokRes = await fetch(X_TOKEN, {
     method: "POST",
     headers: {
@@ -359,7 +575,7 @@ async function callbackXAuth(request, env, url) {
   const tok = await tokRes.json();
   if (!tok.access_token) {
     console.error("token error", tok);
-    return Response.redirect(`${publicOrigin(env)}/?error=token`, 302);
+    return Response.redirect(`${publicOrigin(env)}/app.html?error=token`, 302);
   }
 
   const meRes = await fetch(
@@ -369,7 +585,7 @@ async function callbackXAuth(request, env, url) {
   const me = await meRes.json();
   const u = me.data;
   if (!u?.id) {
-    return Response.redirect(`${publicOrigin(env)}/?error=me`, 302);
+    return Response.redirect(`${publicOrigin(env)}/app.html?error=me`, 302);
   }
 
   const now = iso();
@@ -393,6 +609,32 @@ async function callbackXAuth(request, env, url) {
   )
     .bind(userId, accessEnc, refreshEnc, expiresAt, tok.scope || SCOPES, now)
     .run();
+
+  // Promote pending BYO credentials onto the user (ongoing use without re-paste)
+  if (pkce.byo || oauth.mode === "byo_pending" || oauth.pending_id) {
+    await env.DB.prepare(
+      `INSERT INTO user_x_apps (user_id, client_id_enc, client_secret_enc, client_id_hint, updated_at)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET
+         client_id_enc = excluded.client_id_enc,
+         client_secret_enc = excluded.client_secret_enc,
+         client_id_hint = excluded.client_id_hint,
+         updated_at = excluded.updated_at`
+    )
+      .bind(
+        userId,
+        await encrypt(env, oauth.client_id),
+        await encrypt(env, oauth.client_secret),
+        clientIdHint(oauth.client_id),
+        now
+      )
+      .run();
+    if (oauth.pending_id) {
+      await env.DB.prepare("DELETE FROM oauth_pending WHERE id = ?")
+        .bind(oauth.pending_id)
+        .run();
+    }
+  }
 
   // Drop any older sessions for this user (single short-lived connection)
   await env.DB.prepare("DELETE FROM sessions WHERE user_id = ?")
@@ -418,6 +660,10 @@ async function callbackXAuth(request, env, url) {
   headers.append(
     "Set-Cookie",
     "xpro_pkce=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0"
+  );
+  headers.append(
+    "Set-Cookie",
+    `${BYO_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`
   );
   return new Response(null, { status: 302, headers });
 }
@@ -528,8 +774,16 @@ async function createRun(request, env, ctx) {
   const user = await requireUser(request, env);
   if (user instanceof Response) return user;
 
-  if (!env.X_CLIENT_ID) {
-    return json({ error: "X OAuth not configured on this host." }, 503);
+  const byo = await userHasByoApp(env, user.id);
+  if (!byo && !env.X_CLIENT_ID) {
+    return json(
+      {
+        error: "no_x_app",
+        message:
+          "Connect with a free host slot or paste your own X developer app (Client ID + Secret).",
+      },
+      503
+    );
   }
 
   const body = await request.json().catch(() => ({}));
@@ -541,29 +795,36 @@ async function createRun(request, env, ctx) {
     weights,
   };
 
-  const claim = await tryClaimFreeSlot(env, user.id);
-  if (!claim.ok) {
-    return json(
-      {
-        error: "free_pool_unavailable",
-        reason: claim.reason,
-        pool: claim.pool,
-        message:
-          claim.reason === "user_free_exhausted"
-            ? "You already used today’s free build. Come back after tomorrow’s random unlock, self-host, or paste an xAI key for analysis-only."
-            : "Free pool is locked or empty. It unlocks at a random time each day (10 host-paid builds).",
-      },
-      402
-    );
+  // BYO: user pays X API — no free pool. Host mode: claim free slot.
+  let paid_by = "host";
+  if (byo) {
+    paid_by = "user";
+  } else {
+    const claim = await tryClaimFreeSlot(env, user.id);
+    if (!claim.ok) {
+      return json(
+        {
+          error: "free_pool_unavailable",
+          reason: claim.reason,
+          pool: claim.pool,
+          message:
+            claim.reason === "user_free_exhausted"
+              ? "Host free build already used today. Come back after tomorrow’s unlock, or connect with your own X developer app (you pay X)."
+              : "Host free pool is locked or empty. Unlock is random each day — or use your own X developer app for unlimited runs on this host.",
+          byo_hint: true,
+        },
+        402
+      );
+    }
   }
 
   const id = crypto.randomUUID();
   const now = iso();
   await env.DB.prepare(
     `INSERT INTO runs (id, user_id, status, paid_by, quiz_json, created_at, updated_at)
-     VALUES (?, ?, 'scanning', 'host', ?, ?, ?)`
+     VALUES (?, ?, 'scanning', ?, ?, ?, ?)`
   )
-    .bind(id, user.id, JSON.stringify(quiz), now, now)
+    .bind(id, user.id, paid_by, JSON.stringify(quiz), now, now)
     .run();
 
   // Process inline (Workers: keep under CPU limits; lean caps)
@@ -616,12 +877,13 @@ async function applyRun(request, env, id) {
     .bind(id, user.id)
     .first();
   if (!row) return json({ error: "Not found" }, 404);
-  if (row.paid_by !== "host") {
+  // host = free pool create; user = BYO X app (user pays X)
+  if (row.paid_by !== "host" && row.paid_by !== "user") {
     return json(
       {
-        error: "host_create_only_on_free",
+        error: "create_not_allowed",
         message:
-          "One-click create uses the host free pool. Self-host for unlimited creates, or wait for tomorrow’s free drop.",
+          "List create not allowed for this run. Use host free pool or your own X developer app.",
       },
       402
     );
@@ -897,12 +1159,14 @@ async function getAccessToken(env, userId) {
 }
 
 async function refreshToken(env, userId, refresh) {
+  const oauth = (await getOAuthClient(env, { userId })) || (await getOAuthClient(env, {}));
+  if (!oauth) throw new Error("No OAuth client — reconnect X.");
   const body = new URLSearchParams({
     grant_type: "refresh_token",
     refresh_token: refresh,
-    client_id: env.X_CLIENT_ID,
+    client_id: oauth.client_id,
   });
-  const basic = btoa(`${env.X_CLIENT_ID}:${env.X_CLIENT_SECRET || ""}`);
+  const basic = btoa(`${oauth.client_id}:${oauth.client_secret || ""}`);
   const res = await fetch(X_TOKEN, {
     method: "POST",
     headers: {

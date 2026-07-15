@@ -105,6 +105,18 @@ curl -s https://xpro.howtomovetheneedle.com/api/pool
 - No framework lock-in  
 - Tokens encrypted at rest (AES-GCM)
 
+## Bring your own X developer app (ongoing, no host X bill)
+
+Same hosted site — **no self-hosting** required. X API usage bills **your** developer project.
+
+1. Create an app on [developer.x.com](https://developer.x.com) (OAuth 2.0 User authentication).
+2. Callback **exactly**: `https://xpro.howtomovetheneedle.com/api/auth/x/callback`
+3. Permissions: Read and write (+ DM read if using DM lists).
+4. On the app connect screen: paste **OAuth 2.0 Client ID + Client Secret** → **Save & connect with my app**.
+5. Credentials are encrypted on the host; short sessions still wipe *tokens*, not your saved app credentials (clear via API if needed).
+
+Host free pool remains for limited gift runs. BYO skips the free pool entirely (`paid_by = user`).
+
 ## Session policy (short by design)
 
 This public host is **not** meant to keep people logged into X forever:
