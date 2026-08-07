@@ -14,6 +14,6 @@
     "secrets:x-oauth": "bash scripts/put-x-oauth-secrets.sh"
   },
   "devDependencies": {
-    "wrangler": "^4.94.0"
+    "wrangler": "^4.120.0"
   }
 }
