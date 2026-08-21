@@ -17,7 +17,908 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet" />
 </head>
 <body>
-  <header class="site-header">
+<!-- htmtn-global-nav-start -->
+
+<style id="htmtn-global-nav">
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Bebas+Neue&display=swap');
+  nav.htmtn-site-nav {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: color-mix(in srgb, var(--card, #fff) 92%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border, rgba(0,0,0,.09));
+    padding: 0 28px;
+    min-height: 68px;
+    height: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    box-sizing: border-box;
+    font-family: Inter, system-ui, sans-serif;
+    color: var(--text, #0f1117);
+    overflow: visible !important;
+  }
+  .htmtn-site-nav .nav-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.45rem;
+    letter-spacing: 0.04em;
+    color: var(--text, #0f1117);
+    text-decoration: none;
+    line-height: 1;
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+  .htmtn-site-nav .nav-logo span { color: var(--accent, #1a4fdb); }
+  .htmtn-site-nav .nav-links {
+    display: flex; gap: 22px; list-style: none; margin: 0; padding: 0;
+    align-items: center; position: static; flex: 1 1 auto; justify-content: center;
+  }
+  .htmtn-site-nav .nav-links > li { list-style: none; margin: 0; padding: 0; }
+  .htmtn-site-nav .nav-links > li > a:not(.nav-dropdown-toggle):not([data-flashlight-trigger]) {
+    color: var(--muted, #5a5f72); text-decoration: none; font-size: 0.9rem; font-weight: 500;
+  }
+  .htmtn-site-nav a.nav-cta:not([data-flashlight-trigger]) {
+    background: var(--accent, #1a4fdb) !important; color: #fff !important;
+    padding: 9px 18px; border-radius: 6px; font-size: 0.82rem; font-weight: 700;
+    text-decoration: none !important; white-space: nowrap; flex: 0 0 auto; border: none;
+  }
+  .htmtn-site-nav a.nav-cta[data-flashlight-trigger],
+  a.nav-cta[data-flashlight-trigger] {
+    position: relative !important; display: inline-flex !important;
+    visibility: visible !important; opacity: 1 !important;
+    align-items: center !important; gap: 9px !important;
+    padding: 9px 18px 9px 14px !important;
+    background: linear-gradient(180deg, #ffffff 0%, #fffbef 100%) !important;
+    color: #14213d !important; -webkit-text-fill-color: #14213d !important;
+    border: 1.25px solid rgba(214, 158, 32, 0.55) !important;
+    border-radius: 999px !important; font-size: 0.82rem !important; font-weight: 700 !important;
+    text-decoration: none !important; flex: 0 0 auto !important; z-index: 2;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 2px rgba(15,26,61,0.05) !important;
+  }
+  a.nav-cta[data-flashlight-trigger] .tt-trigger-label {
+    color: #14213d !important; -webkit-text-fill-color: #14213d !important; background: none !important;
+  }
+  a.nav-cta[data-flashlight-trigger] .tt-trigger-icon { color: #e8a317 !important; }
+
+  /* Keep local tool sub-navs; hide ONLY duplicate flashlight buttons outside global nav */
+  body:has([data-htmtn-global-nav]) a[data-flashlight-trigger]:not([data-htmtn-global-nav] a[data-flashlight-trigger]),
+  body:has([data-htmtn-global-nav]) a.nav-cta[data-flashlight-trigger]:not(.htmtn-site-nav a.nav-cta[data-flashlight-trigger]) {
+    display: none !important;
+  }
+
+  html[data-theme="dark"] .htmtn-site-nav,
+  html[data-theme="matrix"] .htmtn-site-nav {
+    background: color-mix(in srgb, #12141c 92%, transparent);
+    border-bottom-color: rgba(255,255,255,0.08);
+  }
+
+  /* Hide SPA/local cloned HTMTN top bars (bare <nav> with .nav-logo) — keep global mega-nav + tool sub-navs */
+  body:has([data-htmtn-global-nav]) nav:not(.htmtn-site-nav):not(.htmtn-spoke-links):not([aria-label]):has(.nav-logo),
+  body:has([data-htmtn-global-nav]) nav:not(.htmtn-site-nav):not(.htmtn-spoke-links):has(a.nav-logo) {
+    display: none !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    visibility: hidden !important;
+  }
+
+  
+  /* Hiring and other tool pages: allow flashlight overlay */
+  html:has([data-htmtn-global-nav]),
+  body:has([data-htmtn-global-nav]) {
+    overflow-x: clip;
+  }
+  html[data-theme="flashlight"],
+  html[data-theme="flashlight"] body {
+    overflow: hidden !important;
+  }
+
+  @media (max-width: 980px) {
+    .htmtn-site-nav .nav-links { display: none; }
+    .htmtn-site-nav { padding: 0 16px; }
+  }
+</style>
+
+<style id="nav-mega-menus" data-mega-v="6">
+    .htmtn-site-nav { position: sticky; overflow: visible !important; }
+    .htmtn-site-nav .nav-links { position: static; }
+    .nav-dropdown { position: static; list-style: none; }
+    .nav-dropdown > .nav-dropdown-toggle {
+      display: inline-flex; align-items: center; gap: 4px;
+      color: var(--muted); text-decoration: none;
+      font-size: 0.9rem; font-weight: 500; letter-spacing: 0.02em;
+      transition: color .2s; cursor: pointer;
+      padding: 22px 6px; margin: -22px 0;
+    }
+    .nav-dropdown > .nav-dropdown-toggle:hover,
+    .nav-dropdown:focus-within > .nav-dropdown-toggle,
+    .nav-dropdown.is-open > .nav-dropdown-toggle,
+    .nav-dropdown > .nav-dropdown-toggle.active { color: var(--text); }
+    .nav-dropdown > .nav-dropdown-toggle.active { font-weight: 700; }
+    .nav-dropdown-caret { font-size: 0.7em; transition: transform .2s; display: inline-block; }
+    .nav-dropdown:hover .nav-dropdown-caret,
+    .nav-dropdown:focus-within .nav-dropdown-caret,
+    .nav-dropdown.is-open .nav-dropdown-caret { transform: rotate(180deg); }
+
+    .nav-mega-panel {
+      position: absolute; left: 50%; top: 100%;
+      transform: translateX(-50%) translateY(0);
+      width: min(980px, calc(100vw - 28px));
+      margin: 0; padding: 0; list-style: none;
+      background: var(--card, #fff);
+      border: 1px solid var(--border, rgba(0,0,0,0.09));
+      border-radius: 16px;
+      box-shadow: 0 22px 50px -18px rgba(15,17,23,0.28), 0 8px 20px -12px rgba(26,79,219,0.18);
+      opacity: 0; visibility: hidden; pointer-events: none;
+      transition: opacity .14s ease, transform .14s ease, visibility 0s linear .28s;
+      z-index: 300;
+    }
+    .nav-mega-panel::before {
+      content: ""; position: absolute; left: 0; right: 0; top: -28px; height: 28px;
+    }
+    .nav-dropdown.is-open::after,
+    .nav-dropdown:hover::after,
+    .nav-dropdown:focus-within::after {
+      content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 28px; z-index: 299;
+    }
+    .nav-dropdown:hover > .nav-mega-panel,
+    .nav-dropdown:focus-within > .nav-mega-panel,
+    .nav-dropdown.is-open > .nav-mega-panel {
+      opacity: 1; visibility: visible; pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+      transition-delay: 0s;
+    }
+    .nav-mega-inner {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 6px 14px;
+      padding: 20px 18px 10px;
+    }
+    .nav-mega-inner--trainings,
+    .nav-mega-inner--frameworks { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .nav-mega-col { min-width: 0; }
+    .nav-mega-col-title {
+      margin: 0 0 10px; padding: 0 8px;
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--accent, #1a4fdb);
+    }
+    .nav-mega-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 8px 8px; border-radius: 10px;
+      text-decoration: none !important; color: inherit;
+      transition: background .15s ease;
+    }
+    .nav-mega-item:hover { background: var(--bg2, #f7f8fc); }
+    .nav-mega-icon {
+      flex: 0 0 auto; width: 34px; height: 34px;
+      border-radius: 9px; display: block;
+      box-shadow: 0 2px 6px rgba(15,17,23,0.10);
+      background: transparent;
+      object-fit: cover;
+    }
+    .nav-mega-item:hover .nav-mega-icon {
+      transform: translateY(-1px) scale(1.04);
+      box-shadow: 0 4px 12px rgba(26,79,219,0.16);
+    }
+    .nav-mega-icon {
+      transition: transform .16s ease, box-shadow .16s ease;
+    }
+    .nav-mega-text { min-width: 0; display: block; }
+    .nav-mega-name {
+      display: block; font-size: 0.875rem; font-weight: 600;
+      letter-spacing: 0.01em; color: var(--text, #0f1117);
+      line-height: 1.25; white-space: normal;
+    }
+    .nav-mega-desc {
+      display: block; margin-top: 2px; font-size: 0.75rem; font-weight: 500;
+      color: var(--muted, #5a5f72); line-height: 1.35; white-space: normal;
+    }
+    .nav-mega-item:hover .nav-mega-name { color: var(--accent, #1a4fdb); }
+    .nav-mega-foot {
+      grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap; margin-top: 6px; padding: 14px 10px 6px;
+      border-top: 1px solid var(--border, rgba(0,0,0,0.08));
+    }
+    .nav-mega-foot a {
+      font-size: 0.875rem !important; font-weight: 700 !important;
+      color: var(--accent, #1a4fdb) !important; text-decoration: none !important; white-space: nowrap;
+    }
+    .nav-mega-foot a:hover { text-decoration: underline !important; }
+    .nav-mega-note { font-size: 0.75rem; color: var(--muted, #5a5f72); font-weight: 500; }
+    html[data-theme="dark"] .nav-mega-panel,
+    html[data-theme="matrix"] .nav-mega-panel { box-shadow: 0 22px 50px -14px rgba(0,0,0,0.55); }
+    html[data-theme="dark"] .nav-mega-item:hover,
+    html[data-theme="matrix"] .nav-mega-item:hover {
+      background: color-mix(in srgb, var(--bg2, #181b25) 80%, var(--accent, #1a4fdb) 12%);
+    }
+    @media (max-width: 900px) {
+      .nav-mega-panel { display: none; }
+      .nav-dropdown > .nav-dropdown-toggle { padding: 0; margin: 0; }
+      .nav-dropdown.is-open::after, .nav-dropdown:hover::after, .nav-dropdown:focus-within::after { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) { .nav-mega-panel { transition: none; } }
+  </style>
+<nav class="htmtn-site-nav" data-htmtn-global-nav="1">
+  <a href="https://howtomovetheneedle.com/" class="nav-logo">How To <span>Move The Needle</span></a>
+  <ul class="nav-links">
+    <li class="nav-dropdown nav-mega nav-mega-frameworks">
+      <a href="https://howtomovetheneedle.com/#frameworks" class="nav-dropdown-toggle" aria-haspopup="true" aria-expanded="false">Frameworks <span class="nav-dropdown-caret" aria-hidden="true">&#9662;</span></a>
+      <div class="nav-mega-panel" role="menu" aria-label="Growth frameworks">
+        <div class="nav-mega-inner nav-mega-inner--frameworks">
+          <div class="nav-mega-col">
+            <h3 class="nav-mega-col-title">Core lenses</h3>
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/#framework-toc">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/fw-toc.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Theory of Constraints</span>
+                <span class="nav-mega-desc">Find the one bottleneck</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/#framework-jtbd">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/fw-jtbd.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Jobs To Be Done</span>
+                <span class="nav-mega-desc">Why customers “hire” you</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/#framework-odi">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/fw-odi.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Outcome Driven Innovation</span>
+                <span class="nav-mega-desc">Unmet needs → messaging</span>
+              </span>
+            </a>
+
+          </div>
+          <div class="nav-mega-col">
+            <h3 class="nav-mega-col-title">Focus &amp; leverage</h3>
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/#framework-marginal-gains">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/fw-mg.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Marginal Gains</span>
+                <span class="nav-mega-desc">1% improvements compound</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/#framework-8020">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/fw-8020.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">80/20 &amp; 95/5</span>
+                <span class="nav-mega-desc">Vital few + in-market buyers</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/#framework-lanchester">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/fw-lanchester.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Lanchester Strategy</span>
+                <span class="nav-mega-desc">Compete by market position</span>
+              </span>
+            </a>
+
+          </div>
+          <div class="nav-mega-col">
+            <h3 class="nav-mega-col-title">Measurement</h3>
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/#framework-rfm">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/fw-rfm.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">RFM Analysis</span>
+                <span class="nav-mega-desc">Recency, frequency, monetary</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/#framework-data">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/fw-data.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Data-Driven Decisions</span>
+                <span class="nav-mega-desc">Clarity before creativity</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/Resources">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/specs.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Free tools</span>
+                <span class="nav-mega-desc">Put frameworks to work</span>
+              </span>
+            </a>
+
+          </div>
+          <div class="nav-mega-foot">
+            <span class="nav-mega-note">8 lenses that unlock growth</span>
+            <a href="https://howtomovetheneedle.com/#frameworks">See all frameworks &rarr;</a>
+          </div>
+        </div>
+      </div>
+    </li>
+    <li><a href="https://howtomovetheneedle.com/About">About</a></li>
+    <li class="nav-dropdown nav-mega nav-mega-needle">
+      <a href="https://howtomovetheneedle.com/The-Needle-Mover" class="nav-dropdown-toggle" aria-haspopup="true" aria-expanded="false">The Needle Mover <span class="nav-dropdown-caret" aria-hidden="true">&#9662;</span></a>
+      <div class="nav-mega-panel" role="menu" aria-label="Needle Mover articles">
+        <div class="nav-mega-inner">
+          <div class="nav-mega-col">
+            <h3 class="nav-mega-col-title">Foundations</h3>
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/What-Is-A-Needle-Mover">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/nm-what.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">What Is A Needle Mover?</span>
+                <span class="nav-mega-desc">80/20 activities that grow</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/Marginal-Gains-For-Business">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/nm-marginal.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Marginal Gains for Business</span>
+                <span class="nav-mega-desc">British Cycling → marketing</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/North-Star-Customers">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/nm-nsc.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">North Star Customers</span>
+                <span class="nav-mega-desc">Customers who drive growth</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/Tools-I-Like-And-Use">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/nm-tools.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Tools I Like and Use</span>
+                <span class="nav-mega-desc">Stack that earns its keep</span>
+              </span>
+            </a>
+
+          </div>
+          <div class="nav-mega-col">
+            <h3 class="nav-mega-col-title">Ads &amp; pixels</h3>
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/Retargeting-3-0">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/nm-retarget.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Retargeting 3.0</span>
+                <span class="nav-mega-desc">Pixel laddering method</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/Pixel-Swapping">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/nm-pixel.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Pixel Swapping</span>
+                <span class="nav-mega-desc">Partner traffic, legally</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/UTM-Tagging">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/nm-utm.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">UTM Tagging</span>
+                <span class="nav-mega-desc">Clean campaign tracking</span>
+              </span>
+            </a>
+
+          </div>
+          <div class="nav-mega-col">
+            <h3 class="nav-mega-col-title">Analytics &amp; email</h3>
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/Google-Custom-Reports">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/nm-gcr.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Google Custom Reports</span>
+                <span class="nav-mega-desc">What actually matters</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/Google-Postmaster-Setup">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/nm-postmaster.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Google Postmaster Setup</span>
+                <span class="nav-mega-desc">Deliverability in 5 minutes</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/Split-Test-Calculator">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/nm-split.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Split Test Calculator</span>
+                <span class="nav-mega-desc">Real statistical significance</span>
+              </span>
+            </a>
+
+          </div>
+          <div class="nav-mega-col">
+            <h3 class="nav-mega-col-title">Trainings</h3>
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/Trainings">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/tr-hub.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">All free trainings</span>
+                <span class="nav-mega-desc">11 Needle Mover lessons</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/Needle-Mover-1">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/tr-1.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">HourScore</span>
+                <span class="nav-mega-desc">+18% more email clicks</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/Needle-Mover-10">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/tr-10.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">80/20 for Marketing</span>
+                <span class="nav-mega-desc">Find the vital few</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/Needle-Mover-11">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/tr-11.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">The Power of RFM</span>
+                <span class="nav-mega-desc">Segment who pays</span>
+              </span>
+            </a>
+
+          </div>
+          <div class="nav-mega-foot">
+            <span class="nav-mega-note">Deep dives + free trainings</span>
+            <a href="https://howtomovetheneedle.com/The-Needle-Mover">Browse the hub &rarr;</a>
+          </div>
+        </div>
+      </div>
+    </li>
+    <li><a href="https://howtomovetheneedle.com/Work-With-Me">Work With Me</a></li>
+    <li class="nav-dropdown nav-mega nav-mega-trainings">
+      <a href="https://howtomovetheneedle.com/Trainings" class="nav-dropdown-toggle" aria-haspopup="true" aria-expanded="false">Trainings <span class="nav-dropdown-caret" aria-hidden="true">&#9662;</span></a>
+      <div class="nav-mega-panel" role="menu" aria-label="Needle Mover trainings">
+        <div class="nav-mega-inner nav-mega-inner--trainings">
+          <div class="nav-mega-col">
+            <h3 class="nav-mega-col-title">Email deliverability</h3>
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/Needle-Mover-1">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/tr-1.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">HourScore</span>
+                <span class="nav-mega-desc">+18% more email clicks</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/Needle-Mover-2">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/tr-2.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Email Tech Setup</span>
+                <span class="nav-mega-desc">SPF / DKIM / DMARC</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/Needle-Mover-3">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/tr-3.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Google Postmaster</span>
+                <span class="nav-mega-desc">Setup &amp; walkthrough</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/Needle-Mover-4">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/tr-4.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Hard Bounce Magic</span>
+                <span class="nav-mega-desc">Hidden list revenue</span>
+              </span>
+            </a>
+
+          </div>
+          <div class="nav-mega-col">
+            <h3 class="nav-mega-col-title">Engagement &amp; lists</h3>
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/Needle-Mover-5">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/tr-5.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">The “Hey” Deep Dive</span>
+                <span class="nav-mega-desc">Greatest subject line DNA</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/Needle-Mover-6">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/tr-6.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Juice Your List</span>
+                <span class="nav-mega-desc">Spike clicks on demand</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/Needle-Mover-8">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/tr-8.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">List Revival</span>
+                <span class="nav-mega-desc">Revive + juice your list</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/Needle-Mover-11">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/tr-11.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">The Power of RFM</span>
+                <span class="nav-mega-desc">Recency, frequency, monetary</span>
+              </span>
+            </a>
+
+          </div>
+          <div class="nav-mega-col">
+            <h3 class="nav-mega-col-title">Web &amp; strategy</h3>
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/Needle-Mover-7">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/tr-7.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Pagespeed Audit</span>
+                <span class="nav-mega-desc">Fix the 5% causing 80%</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/Needle-Mover-9">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/tr-9.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">404 → Conversion</span>
+                <span class="nav-mega-desc">Turn dead ends into sales</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/Needle-Mover-10">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/tr-10.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">80/20 for Marketing</span>
+                <span class="nav-mega-desc">Find the vital few</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://howtomovetheneedle.com/The-Needle-Mover">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/nm-hub.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Needle Mover hub</span>
+                <span class="nav-mega-desc">All frameworks &amp; posts</span>
+              </span>
+            </a>
+
+          </div>
+          <div class="nav-mega-foot">
+            <span class="nav-mega-note">11 free trainings · get them all by email</span>
+            <a href="https://howtomovetheneedle.com/Trainings">View all trainings &amp; subscribe &rarr;</a>
+          </div>
+        </div>
+      </div>
+    </li>
+    <li class="nav-dropdown nav-mega nav-mega-resources">
+      <a href="https://howtomovetheneedle.com/Resources" class="nav-dropdown-toggle" aria-haspopup="true" aria-expanded="false">Resources <span class="nav-dropdown-caret" aria-hidden="true">&#9662;</span></a>
+      <div class="nav-mega-panel" role="menu" aria-label="Free tools and resources">
+        <div class="nav-mega-inner">
+          <div class="nav-mega-col">
+            <h3 class="nav-mega-col-title">Growth</h3>
+
+            <a class="nav-mega-item" role="menuitem" href="https://optimizeyourquiz.com/" target="_blank" rel="noopener">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/optimizeyourquiz.svg?v=6" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Optimize Your Quiz</span>
+                <span class="nav-mega-desc">Audit quiz → fix revenue leaks</span>
+              </span>
+            </a>
+            <a class="nav-mega-item" role="menuitem" href="https://pagespeed.howtomovetheneedle.com/" target="_blank" rel="noopener">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/pagespeed.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Pagespeed Audit</span>
+                <span class="nav-mega-desc">Core Web Vitals + AI fix brief</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://productladder.howtomovetheneedle.com/" target="_blank" rel="noopener">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/productladder.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Product Ladder</span>
+                <span class="nav-mega-desc">Pareto offers &amp; price gaps</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://404pagegenerator.com/" target="_blank" rel="noopener">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/404pagegenerator.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">404 Page Generator</span>
+                <span class="nav-mega-desc">Score + rebuild lost visits</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://qr.howtomovetheneedle.com/" target="_blank" rel="noopener">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/qr-codes.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">QR Codes</span>
+                <span class="nav-mega-desc">Static, dynamic, or tracked</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://rfm.howtomovetheneedle.com/" target="_blank" rel="noopener">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/rfm.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">RFM Scoring</span>
+                <span class="nav-mega-desc">Who to keep &amp; win back</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://8020.howtomovetheneedle.com/" target="_blank" rel="noopener">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/8020.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">80/20 Calculator</span>
+                <span class="nav-mega-desc">Pareto on your numbers</span>
+              </span>
+            </a>
+
+          </div>
+          <div class="nav-mega-col">
+            <h3 class="nav-mega-col-title">Cloud explorers</h3>
+            <a class="nav-mega-item" role="menuitem" href="https://aws.howtomovetheneedle.com/" target="_blank" rel="noopener">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/aws.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">AWS Made Clear</span>
+                <span class="nav-mega-desc">Free credits &amp; what to use</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://cloudflare.howtomovetheneedle.com/" target="_blank" rel="noopener">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/cloudflare.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Cloudflare Made Clear</span>
+                <span class="nav-mega-desc">Free plan vs paid, Workers</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://azure.howtomovetheneedle.com/" target="_blank" rel="noopener">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/azure.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Azure Made Clear</span>
+                <span class="nav-mega-desc">Trial credits &amp; Always Free</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://google.howtomovetheneedle.com/" target="_blank" rel="noopener">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/google.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Google Cloud Made Clear</span>
+                <span class="nav-mega-desc">GCP free tier, clear picks</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://compareclouds.howtomovetheneedle.com/" target="_blank" rel="noopener">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/compareclouds.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Compare Clouds</span>
+                <span class="nav-mega-desc">Side-by-side free tiers</span>
+              </span>
+            </a>
+
+          </div>
+          <div class="nav-mega-col">
+            <h3 class="nav-mega-col-title">Build &amp; agents</h3>
+            <a class="nav-mega-item" role="menuitem" href="https://specs.howtomovetheneedle.com/" target="_blank" rel="noopener">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/specs.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Website Spec</span>
+                <span class="nav-mega-desc">111-item site checklist</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://hermes.howtomovetheneedle.com/" target="_blank" rel="noopener">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/hermes.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Hermes Agent</span>
+                <span class="nav-mega-desc">Capability map &amp; skills</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://xpro.howtomovetheneedle.com/" target="_blank" rel="noopener">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/xpro.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">X Pro Guideposts</span>
+                <span class="nav-mega-desc">Signals → private Lists</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://hiring.howtomovetheneedle.com/" target="_blank" rel="noopener">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/hiring.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">Hiring Lab</span>
+                <span class="nav-mega-desc">Aggregation function roles</span>
+              </span>
+            </a>
+
+          </div>
+          <div class="nav-mega-col">
+            <h3 class="nav-mega-col-title">Sports data</h3>
+            <a class="nav-mega-item" role="menuitem" href="https://ncaasports.howtomovetheneedle.com/" target="_blank" rel="noopener">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/ncaasports.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">NCAA All Divisions</span>
+                <span class="nav-mega-desc">Selectivity, grad, titles</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://d1sports.howtomovetheneedle.com/" target="_blank" rel="noopener">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/d1sports.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">D1 Sports</span>
+                <span class="nav-mega-desc">Division I only</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://d2sports.howtomovetheneedle.com/" target="_blank" rel="noopener">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/d2sports.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">D2 Sports</span>
+                <span class="nav-mega-desc">Division II only</span>
+              </span>
+            </a>
+
+            <a class="nav-mega-item" role="menuitem" href="https://d3sports.howtomovetheneedle.com/" target="_blank" rel="noopener">
+              <img class="nav-mega-icon" src="https://howtomovetheneedle.com/assets/mega-icons/d3sports.svg?v=5" alt="" width="32" height="32" loading="lazy" decoding="async" />
+              <span class="nav-mega-text">
+                <span class="nav-mega-name">D3 Sports</span>
+                <span class="nav-mega-desc">Division III only</span>
+              </span>
+            </a>
+
+          </div>
+          <div class="nav-mega-foot">
+            <span class="nav-mega-note">Free tools from How To Move The Needle</span>
+            <a href="https://howtomovetheneedle.com/Resources">Browse all free tools &rarr;</a>
+          </div>
+        </div>
+      </div>
+    </li>
+  </ul>
+  <a href="#" class="nav-cta" data-flashlight-trigger>Try Flashlight Mode</a>
+</nav>
+<script id="nav-mega-sticky">
+(function () {
+  var CLOSE_MS = 380;
+  var timers = new WeakMap();
+  function clearTimer(el) {
+    var t = timers.get(el);
+    if (t) { clearTimeout(t); timers.delete(el); }
+  }
+  function openMega(el) {
+    clearTimer(el);
+    document.querySelectorAll('.nav-dropdown.is-open').forEach(function (other) {
+      if (other !== el) other.classList.remove('is-open');
+    });
+    el.classList.add('is-open');
+    var toggle = el.querySelector('.nav-dropdown-toggle');
+    if (toggle) toggle.setAttribute('aria-expanded', 'true');
+  }
+  function scheduleClose(el) {
+    clearTimer(el);
+    var t = setTimeout(function () {
+      el.classList.remove('is-open');
+      var toggle = el.querySelector('.nav-dropdown-toggle');
+      if (toggle) toggle.setAttribute('aria-expanded', 'false');
+      timers.delete(el);
+    }, CLOSE_MS);
+    timers.set(el, t);
+  }
+  function bind(el) {
+    el.addEventListener('mouseenter', function () { openMega(el); });
+    el.addEventListener('mouseleave', function () { scheduleClose(el); });
+    el.addEventListener('focusin', function () { openMega(el); });
+    el.addEventListener('focusout', function (e) {
+      if (!el.contains(e.relatedTarget)) scheduleClose(el);
+    });
+    var panel = el.querySelector('.nav-mega-panel');
+    if (panel) {
+      panel.addEventListener('mouseenter', function () { openMega(el); });
+      panel.addEventListener('mouseleave', function () { scheduleClose(el); });
+    }
+  }
+  function init() {
+    document.querySelectorAll('.nav-dropdown.nav-mega').forEach(bind);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+<script>
+(function () {
+  function removeCloneNavs() {
+    document.querySelectorAll("nav").forEach(function (nav) {
+      if (nav.classList.contains("htmtn-site-nav")) return;
+      if (nav.classList.contains("htmtn-spoke-links")) return;
+      if (nav.getAttribute("aria-label") === "Division sites") return;
+      if (nav.classList.contains("div-nav") || nav.querySelector(".div-nav-link")) return;
+      if (nav.closest(".site-header") || nav.closest(".tool-nav") || nav.classList.contains("tool-nav")) return;
+      var hasLogo = nav.querySelector(".nav-logo, a.nav-logo");
+      var text = nav.textContent || "";
+      var hasFrameworks = /Frameworks/i.test(text);
+      var hasFlash = nav.querySelector("[data-flashlight-trigger]");
+      if (hasLogo && (hasFrameworks || hasFlash)) {
+        nav.style.setProperty("display", "none", "important");
+        nav.setAttribute("data-htmtn-clone-hidden", "1");
+        nav.querySelectorAll("[data-flashlight-trigger]").forEach(function (el) { el.remove(); });
+      }
+    });
+    var keep = document.querySelector(".htmtn-site-nav [data-flashlight-trigger]");
+    document.querySelectorAll("[data-flashlight-trigger]").forEach(function (el) {
+      if (keep && el !== keep) el.remove();
+      else if (el) {
+        el.style.setProperty("opacity", "1", "important");
+        el.style.setProperty("visibility", "visible", "important");
+        el.style.setProperty("display", "inline-flex", "important");
+      }
+    });
+  }
+
+  function enableFlashlightFromNav() {
+    // One-click: turn beam on when user hits Try Flashlight Mode
+    var triggers = document.querySelectorAll(".htmtn-site-nav [data-flashlight-trigger]");
+    triggers.forEach(function (t) {
+      if (t.dataset.htmtnFlashBoost === "1") return;
+      t.dataset.htmtnFlashBoost = "1";
+      t.addEventListener("click", function () {
+        // Let theme.js open the panel first, then engage flashlight mode
+        setTimeout(function () {
+          var theme = document.documentElement.getAttribute("data-theme");
+          if (theme === "flashlight") return;
+          var btn = document.querySelector('.tt-mode-btn[data-mode="flashlight"]');
+          if (btn) btn.click();
+        }, 30);
+      });
+    });
+  }
+
+  removeCloneNavs();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", removeCloneNavs);
+  }
+  [0, 300, 1000, 2500, 5000].forEach(function (ms) {
+    setTimeout(function () { removeCloneNavs(); enableFlashlightFromNav(); }, ms);
+  });
+
+  var obs = new MutationObserver(function () { removeCloneNavs(); });
+  if (document.documentElement) {
+    obs.observe(document.documentElement, { childList: true, subtree: true });
+    setTimeout(function () { try { obs.disconnect(); } catch (e) {} }, 12000);
+  }
+
+  function afterTheme() {
+    window.__HTMTN_THEME_LOADED = true;
+    window.__HTMTN_THEME_LOADING = false;
+    removeCloneNavs();
+    enableFlashlightFromNav();
+    setTimeout(function () { removeCloneNavs(); enableFlashlightFromNav(); }, 200);
+    setTimeout(function () { removeCloneNavs(); enableFlashlightFromNav(); }, 800);
+  }
+
+  if (window.__HTMTN_THEME_LOADING || window.__HTMTN_THEME_LOADED) {
+    afterTheme();
+    return;
+  }
+  if (document.getElementById("tt-styles") && document.querySelector(".tt-widget")) {
+    afterTheme();
+    return;
+  }
+  window.__HTMTN_THEME_LOADING = true;
+  var s = document.createElement("script");
+  s.src = "https://howtomovetheneedle.com/assets/theme.js?v=nav6";
+  s.async = true;
+  s.onload = afterTheme;
+  s.onerror = function () {
+    window.__HTMTN_THEME_LOADING = false;
+    removeCloneNavs();
+  };
+  (document.head || document.documentElement).appendChild(s);
+})();
+</script>
+
+<!-- htmtn-global-nav-end -->
+
+<header class="site-header">
     <a class="brand" href="/">
       <span class="brand-mark" aria-hidden="true">X</span>
       <span>Pro Guideposts</span>
@@ -148,16 +1049,27 @@
     </section>
   </main>
 
-  <footer class="site-footer">
+    <footer class="site-footer">
     <p>
       <strong>Not affiliated with X or X Corp.</strong>
       Built by
       <a href="https://x.com/JonathanDrake" target="_blank" rel="noopener">@JonathanDrake</a>
-      ·
-      <a href="https://howtomovetheneedle.com">How To Move The Needle</a>
-      ·
-      <a href="https://github.com/drake/X-Pro-Setup" target="_blank" rel="noopener">MIT source</a>
     </p>
+    <p class="htmtn-credit">A needle-mover from <strong><a href="https://howtomovetheneedle.com/">How To Move The Needle</a></strong></p>
+    <nav class="htmtn-spoke-links" aria-label="How To Move The Needle network">
+        <a href="https://howtomovetheneedle.com/">How To Move The Needle</a>
+        <span class="htmtn-dot" aria-hidden="true">·</span>
+        <a href="https://howtomovetheneedle.com/Resources">Free tools</a>
+        <span class="htmtn-dot" aria-hidden="true">·</span>
+        <a href="https://howtomovetheneedle.com/Trainings">Trainings</a>
+        <span class="htmtn-dot" aria-hidden="true">·</span>
+        <a href="https://hermes.howtomovetheneedle.com/">Hermes</a>
+        <span class="htmtn-dot" aria-hidden="true">·</span>
+        <a href="https://qr.howtomovetheneedle.com/">QR Codes</a>
+        <span class="htmtn-dot" aria-hidden="true">·</span>
+        <a href="https://optimizeyourquiz.com/">Optimize Your Quiz</a>
+      </nav>
+    <p class="htmtn-meta"><a href="https://github.com/drake/X-Pro-Setup" target="_blank" rel="noopener">MIT source</a></p>
   </footer>
   <script>
     fetch("/api/pool")
